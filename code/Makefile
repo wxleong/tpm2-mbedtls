@@ -1,5 +1,3 @@
-#
-
 SRC := $(wildcard *.c */*.c)
 OBJ := $(patsubst %.c,%.o,$(SRC))
 DEP := $(SRC:.c=.d)
