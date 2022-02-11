@@ -7,7 +7,7 @@ Enable hardware acceleration (OPTIGA™ TPM 2.0) on Mbed TLS.
 # Prerequisites
 
 - Tested on Raspberry Pi 4 Model B with Iridium 9670 TPM 2.0 board [[1]](#1) 
-- Set up Raspberry Pi according to [[2]](#2)
+- Set up the Raspberry Pi according to [[2]](#2)
 
 # References
 
