@@ -961,11 +961,13 @@ uint8_t tpm_wrap_perso(void) {
             tpm_close(&ectx);
             return 1;
         }
+
         if (tpm_takeOwnership(ectx)) {
             printf("%s tpm_takeOwnership error\r\n", FILE_TPMAPI);
             tpm_close(&ectx);
             return 1;
         }
+
         if (tpm_createPrimaryKey(ectx)) {
             printf("%s tpm_createPrimaryKey error\r\n", FILE_TPMAPI);
             tpm_close(&ectx);
