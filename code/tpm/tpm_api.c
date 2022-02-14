@@ -25,17 +25,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "tpmt_api.h"
+#include "tpm_api.h"
 
-#define FILE_TPMTAPI "tpmt_api :"
+#define FILE_TPMTAPI "tpm_api :"
 #define TPM2_RSA_KEY_BITS 2048
 #define TPM2_RSA_KEY_BYTES TPM2_RSA_KEY_BITS/8
 #define TPM2_RSA_HASH_BYTES 32
 
-uint8_t tpmt_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle);
-uint8_t tpmt_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle);
+uint8_t tpm_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle);
+uint8_t tpm_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle);
 
-uint8_t tpmt_open(ESYS_CONTEXT **ectx) {
+uint8_t tpm_open(ESYS_CONTEXT **ectx) {
     TSS2_TCTI_CONTEXT *tcti;
 
     /* Getting the TCTI context size */
@@ -56,7 +56,7 @@ uint8_t tpmt_open(ESYS_CONTEXT **ectx) {
     return 0;
 }
 
-uint8_t tpmt_close(ESYS_CONTEXT **ectx) {
+uint8_t tpm_close(ESYS_CONTEXT **ectx) {
     TSS2_TCTI_CONTEXT *tcti = NULL;
 
     /* Properly shutdown TPM */
@@ -84,7 +84,7 @@ uint8_t tpmt_close(ESYS_CONTEXT **ectx) {
 }
 
 /* Returns only the 1st handle found */
-uint8_t tpmt_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, uint8_t *count, TPM2_HANDLE *sys_handle1, TPM2_HANDLE *sys_handle2) {
+uint8_t tpm_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, uint8_t *count, TPM2_HANDLE *sys_handle1, TPM2_HANDLE *sys_handle2) {
     TPMI_YES_NO more_data;
     TPMS_CAPABILITY_DATA *fetched_data = NULL;
     TSS2_RC rval = Esys_GetCapability (ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
@@ -109,7 +109,7 @@ uint8_t tpmt_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, uint8_t *count, T
     return 0;
 }
 
-uint8_t tpmt_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *exponent, uint8_t *mod, uint16_t *modlen) {
+uint8_t tpm_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *exponent, uint8_t *mod, uint16_t *modlen) {
 
     TPM2B_NAME *nameKeySign;
     TPM2B_NAME *keyQualifiedName;
@@ -124,8 +124,8 @@ uint8_t tpmt_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *exp
 
     // Open encrypted session
     TPM2_HANDLE sHandle = ESYS_TR_NONE;
-    if (tpmt_openEncryptedSession(ectx, &sHandle)) {
-        printf("%s tpmt_openEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_openEncryptedSession(ectx, &sHandle)) {
+        printf("%s tpm_openEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -138,8 +138,8 @@ uint8_t tpmt_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *exp
     }
     
     // Close encrypted session
-    if (tpmt_closeEncryptedSession(ectx, sHandle)) {
-        printf("%s tpmt_closeEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -150,7 +150,7 @@ uint8_t tpmt_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *exp
     uint16_t len = outPublic->publicArea.unique.rsa.size;
     
     if (len > *modlen) {
-        printf("%s tpmt_readPublicKey output buffer insufficient error\r\n", FILE_TPMTAPI);
+        printf("%s tpm_readPublicKey output buffer insufficient error\r\n", FILE_TPMTAPI);
         return 1;
     }
     *modlen = len;
@@ -163,7 +163,7 @@ uint8_t tpmt_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *exp
     return 0;
 }
 
-uint8_t tpmt_clearTransient(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
+uint8_t tpm_clearTransient(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
     ESYS_TR transientHandle;
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, tHandle,
                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &transientHandle);
@@ -182,7 +182,7 @@ uint8_t tpmt_clearTransient(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
     return 0;
 }
 
-uint8_t tpmt_move2Persistent(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDLE pHandle) {
+uint8_t tpm_move2Persistent(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDLE pHandle) {
     TPM2B_DIGEST pwd;
     pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "owner123");
     
@@ -214,7 +214,7 @@ uint8_t tpmt_move2Persistent(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDL
     return 0;
 }
 
-uint8_t tpmt_createTransientLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
+uint8_t tpm_createTransientLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
 {
     TPM2B_PUBLIC            *outPublic;
     TPM2B_PRIVATE           *outPrivate;
@@ -353,7 +353,7 @@ err1:
     return 0;
 }
 
-uint8_t tpmt_createTransientPrimaryKey(ESYS_CONTEXT *ectx) {
+uint8_t tpm_createTransientPrimaryKey(ESYS_CONTEXT *ectx) {
     TPM2B_DIGEST pwd;
     pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "owner123");
     
@@ -441,7 +441,7 @@ uint8_t tpmt_createTransientPrimaryKey(ESYS_CONTEXT *ectx) {
     return 0;
 }
 
-uint8_t tpmt_takeOwnership(ESYS_CONTEXT *ectx) {
+uint8_t tpm_takeOwnership(ESYS_CONTEXT *ectx) {
     TPM2B_DIGEST pwd;
     
     /* Set owner password */
@@ -484,7 +484,7 @@ uint8_t tpmt_takeOwnership(ESYS_CONTEXT *ectx) {
     return 0;
 }
 
-uint8_t tpmt_forceClear(ESYS_CONTEXT *ectx) {
+uint8_t tpm_forceClear(ESYS_CONTEXT *ectx) {
     TSS2_RC rval = Esys_Clear(ectx, ESYS_TR_RH_PLATFORM,
                     ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
@@ -496,11 +496,11 @@ uint8_t tpmt_forceClear(ESYS_CONTEXT *ectx) {
     return 0;
 }
 
-uint8_t tpmt_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle) {
+uint8_t tpm_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle) {
     // Get primary key handle
     TPM2B_DIGEST pwd;
     pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "RSAprimary123");
-    TPM2_HANDLE tHandle = TPMT_HANDLE_PRIMARYKEY;
+    TPM2_HANDLE tHandle = TPM_HANDLE_PRIMARYKEY;
     ESYS_TR pHandle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, tHandle,
                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &pHandle);
@@ -542,7 +542,7 @@ uint8_t tpmt_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle) {
     return 0;
 }
 
-uint8_t tpmt_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle) {
+uint8_t tpm_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle) {
     // Close the session
     TSS2_RC rval = Esys_FlushContext(ectx, sHandle);
     if (rval != TSS2_RC_SUCCESS) {
@@ -554,12 +554,12 @@ uint8_t tpmt_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle) {
     return 0;
 }
 
-uint8_t tpmt_getRandom(ESYS_CONTEXT *ectx, uint8_t *rnd, uint16_t *len) {
+uint8_t tpm_getRandom(ESYS_CONTEXT *ectx, uint8_t *rnd, uint16_t *len) {
 
     // Open encrypted session
     TPM2_HANDLE sHandle = ESYS_TR_NONE;
-    if (tpmt_openEncryptedSession(ectx, &sHandle)) {
-        printf("%s tpmt_openEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_openEncryptedSession(ectx, &sHandle)) {
+        printf("%s tpm_openEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -577,8 +577,8 @@ uint8_t tpmt_getRandom(ESYS_CONTEXT *ectx, uint8_t *rnd, uint16_t *len) {
     free(random_bytes);
 
     // Close encrypted session
-    if (tpmt_closeEncryptedSession(ectx, sHandle)) {
-        printf("%s tpmt_closeEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -586,18 +586,18 @@ uint8_t tpmt_getRandom(ESYS_CONTEXT *ectx, uint8_t *rnd, uint16_t *len) {
     return 0;
 }
 
-uint8_t tpmt_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
+uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
                    uint16_t lenin, uint8_t *dataout, uint16_t *lenout) {
     
     if (lenin > TPM2_RSA_KEY_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
-        printf("%s tpmt_cipher invalid length error\r\n", FILE_TPMTAPI);
+        printf("%s tpm_cipher invalid length error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     // Open encrypted session
     TPM2_HANDLE sHandle;
-    if (tpmt_openEncryptedSession(ectx, &sHandle)) {
-        printf("%s tpmt_openEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_openEncryptedSession(ectx, &sHandle)) {
+        printf("%s tpm_openEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -644,8 +644,8 @@ uint8_t tpmt_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     free(encrypted_msg);
 
     // Close encrypted session
-    if (tpmt_closeEncryptedSession(ectx, sHandle)) {
-        printf("%s tpmt_closeEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -653,18 +653,18 @@ uint8_t tpmt_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     return 0;
 }
 
-uint8_t tpmt_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
+uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
            uint16_t lenin, uint8_t *dataout, uint16_t *lenout) {
 
     if (lenin > TPM2_RSA_KEY_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
-        printf("%s tpmt_decipher invalid length error\r\n", FILE_TPMTAPI);
+        printf("%s tpm_decipher invalid length error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     // Open encrypted session
     TPM2_HANDLE sHandle;
-    if (tpmt_openEncryptedSession(ectx, &sHandle)) {
-        printf("%s tpmt_openEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_openEncryptedSession(ectx, &sHandle)) {
+        printf("%s tpm_openEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -717,8 +717,8 @@ uint8_t tpmt_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     free(decrypted_msg);
 
     // Close encrypted session
-    if (tpmt_closeEncryptedSession(ectx, sHandle)) {
-        printf("%s tpmt_closeEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -726,18 +726,18 @@ uint8_t tpmt_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     return 0;
 }
 
-uint8_t tpmt_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
+uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
                    uint16_t lenin, uint8_t *dataout, uint16_t *lenout) {
     
     if (lenin != TPM2_RSA_HASH_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
-        printf("%s tpmt_sign invalid length error\r\n", FILE_TPMTAPI);
+        printf("%s tpm_sign invalid length error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     // Open encrypted session
     TPM2_HANDLE sHandle;
-    if (tpmt_openEncryptedSession(ectx, &sHandle)) {
-        printf("%s tpmt_openEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_openEncryptedSession(ectx, &sHandle)) {
+        printf("%s tpm_openEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -801,8 +801,8 @@ uint8_t tpmt_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     free(signature);
 
     // Close encrypted session
-    if (tpmt_closeEncryptedSession(ectx, sHandle)) {
-        printf("%s tpmt_closeEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -811,18 +811,18 @@ uint8_t tpmt_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
 
 }
 
-uint8_t tpmt_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
+uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
                    uint16_t digestlen, uint8_t *sig, uint16_t siglen, uint8_t *result) {
     *result = 0;
     if (digestlen != TPM2_RSA_HASH_BYTES || siglen < TPM2_RSA_KEY_BYTES) {
-        printf("%s tpmt_verify invalid length error\r\n", FILE_TPMTAPI);
+        printf("%s tpm_verify invalid length error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     // Open encrypted session
     TPM2_HANDLE sHandle;
-    if (tpmt_openEncryptedSession(ectx, &sHandle)) {
-        printf("%s tpmt_openEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_openEncryptedSession(ectx, &sHandle)) {
+        printf("%s tpm_openEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -864,8 +864,8 @@ uint8_t tpmt_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
     free(validation);
 
     // Close encrypted session
-    if (tpmt_closeEncryptedSession(ectx, sHandle)) {
-        printf("%s tpmt_closeEncryptedSession error\r\n", FILE_TPMTAPI);
+    if (tpm_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
@@ -873,98 +873,98 @@ uint8_t tpmt_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
     return 0;
 }
 
-uint8_t tpmt_fast_clear(void) {
+uint8_t tpm_fast_clear(void) {
     ESYS_CONTEXT *ectx = NULL;
 
-    if (tpmt_open(&ectx)) {
-        printf("%s tpmt_open error\r\n", FILE_TPMTAPI);
+    if (tpm_open(&ectx)) {
+        printf("%s tpm_open error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
-    if (tpmt_forceClear(ectx)) {
-        printf("%s tpmt_forceClear error\r\n", FILE_TPMTAPI);
-        tpmt_close(&ectx);
+    if (tpm_forceClear(ectx)) {
+        printf("%s tpm_forceClear error\r\n", FILE_TPMTAPI);
+        tpm_close(&ectx);
         return 1;
     }
 
-    if (tpmt_close(&ectx)) {
-        printf("%s tpmt_close error\r\n", FILE_TPMTAPI);
+    if (tpm_close(&ectx)) {
+        printf("%s tpm_close error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     return 0;
 }
 
-uint8_t tpmt_fast_perso(void) {
+uint8_t tpm_fast_perso(void) {
     ESYS_CONTEXT *ectx = NULL;
     uint8_t count, found = 0;
     TPM2_HANDLE persistent_sys_handle1, persistent_sys_handle2;
     
-    if (tpmt_open(&ectx)) {
-        printf("%s tpmt_open error\r\n", FILE_TPMTAPI);
+    if (tpm_open(&ectx)) {
+        printf("%s tpm_open error\r\n", FILE_TPMTAPI);
         return 1;
     }
     
     // look for existing keys
-    if (tpmt_getSysHandle(ectx, TPM2_PERSISTENT_FIRST, &count, &persistent_sys_handle1, &persistent_sys_handle2)) {
-        printf("%s tpmt_getSysHandle error\r\n", FILE_TPMTAPI);
-        tpmt_close(&ectx);
+    if (tpm_getSysHandle(ectx, TPM2_PERSISTENT_FIRST, &count, &persistent_sys_handle1, &persistent_sys_handle2)) {
+        printf("%s tpm_getSysHandle error\r\n", FILE_TPMTAPI);
+        tpm_close(&ectx);
         return 1;
     }
 
-    if (persistent_sys_handle1 == TPMT_HANDLE_PRIMARYKEY
-            || persistent_sys_handle1 == TPMT_HANDLE_LEAFKEY) {
+    if (persistent_sys_handle1 == TPM_HANDLE_PRIMARYKEY
+            || persistent_sys_handle1 == TPM_HANDLE_LEAFKEY) {
         found++;
         printf("%s found key handle %04x\r\n", FILE_TPMTAPI, persistent_sys_handle1);
     }
 
-    if (persistent_sys_handle2 == TPMT_HANDLE_PRIMARYKEY
-            || persistent_sys_handle2 == TPMT_HANDLE_LEAFKEY) {
+    if (persistent_sys_handle2 == TPM_HANDLE_PRIMARYKEY
+            || persistent_sys_handle2 == TPM_HANDLE_LEAFKEY) {
         found++;
         printf("%s found key handle %04x\r\n", FILE_TPMTAPI, persistent_sys_handle2);
     }
 
     // initialize tpm if key not found
     if (count != 2 || found != 2) {
-        if (tpmt_forceClear(ectx)) {
-            printf("%s tpmt_forceClear error\r\n", FILE_TPMTAPI);
-            tpmt_close(&ectx);
+        if (tpm_forceClear(ectx)) {
+            printf("%s tpm_forceClear error\r\n", FILE_TPMTAPI);
+            tpm_close(&ectx);
             return 1;
         }
-        if (tpmt_takeOwnership(ectx)) {
-            printf("%s tpmt_takeOwnership error\r\n", FILE_TPMTAPI);
-            tpmt_close(&ectx);
+        if (tpm_takeOwnership(ectx)) {
+            printf("%s tpm_takeOwnership error\r\n", FILE_TPMTAPI);
+            tpm_close(&ectx);
             return 1;
         }
-        if (tpmt_createTransientPrimaryKey(ectx)) {
-            printf("%s tpmt_createTransientPrimaryKey error\r\n", FILE_TPMTAPI);
-            tpmt_close(&ectx);
+        if (tpm_createTransientPrimaryKey(ectx)) {
+            printf("%s tpm_createTransientPrimaryKey error\r\n", FILE_TPMTAPI);
+            tpm_close(&ectx);
             return 1;
         }
-        if (tpmt_move2Persistent(ectx, 0x80000000, TPMT_HANDLE_PRIMARYKEY)) {
-            printf("%s tpmt_move2Persistent error\r\n", FILE_TPMTAPI);
-            tpmt_close(&ectx);
+        if (tpm_move2Persistent(ectx, 0x80000000, TPM_HANDLE_PRIMARYKEY)) {
+            printf("%s tpm_move2Persistent error\r\n", FILE_TPMTAPI);
+            tpm_close(&ectx);
             return 1;
         }
-        if (tpmt_clearTransient(ectx, 0x80000000)) {
-            printf("%s tpmt_clearTransient error\r\n", FILE_TPMTAPI);
-            tpmt_close(&ectx);
+        if (tpm_clearTransient(ectx, 0x80000000)) {
+            printf("%s tpm_clearTransient error\r\n", FILE_TPMTAPI);
+            tpm_close(&ectx);
             return 1;
         }
         /* It will allocate to slot 0x80000001 instead of 0x80000000 */
-        if (tpmt_createTransientLeafKey(ectx, TPMT_HANDLE_PRIMARYKEY)) {
-            printf("%s tpmt_createTransientLeafKey error\r\n", FILE_TPMTAPI);
-            tpmt_close(&ectx);
+        if (tpm_createTransientLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
+            printf("%s tpm_createTransientLeafKey error\r\n", FILE_TPMTAPI);
+            tpm_close(&ectx);
             return 1;
         }
-        if (tpmt_move2Persistent(ectx, 0x80000001, TPMT_HANDLE_LEAFKEY)) {
-            printf("%s tpmt_move2Persistent error\r\n", FILE_TPMTAPI);
-            tpmt_close(&ectx);
+        if (tpm_move2Persistent(ectx, 0x80000001, TPM_HANDLE_LEAFKEY)) {
+            printf("%s tpm_move2Persistent error\r\n", FILE_TPMTAPI);
+            tpm_close(&ectx);
             return 1;
         }
-        if (tpmt_clearTransient(ectx, 0x80000001)) {
-            printf("%s tpmt_clearTransient error\r\n", FILE_TPMTAPI);
-            tpmt_close(&ectx);
+        if (tpm_clearTransient(ectx, 0x80000001)) {
+            printf("%s tpm_clearTransient error\r\n", FILE_TPMTAPI);
+            tpm_close(&ectx);
             return 1;
         }
         
@@ -974,96 +974,96 @@ uint8_t tpmt_fast_perso(void) {
         printf("%s TPM is already provisioned, no work to be done\r\n", FILE_TPMTAPI);
     }
 
-    if (tpmt_close(&ectx)) {
-        printf("%s tpmt_close error\r\n", FILE_TPMTAPI);
+    if (tpm_close(&ectx)) {
+        printf("%s tpm_close error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     return 0;
 }
 
-uint8_t tpmt_fast_sign(uint8_t *hash, uint16_t hashlen, uint8_t *sig, uint16_t *siglen) {
+uint8_t tpm_fast_sign(uint8_t *hash, uint16_t hashlen, uint8_t *sig, uint16_t *siglen) {
     ESYS_CONTEXT *ectx = NULL;
     
-    if (tpmt_open(&ectx)) {
-        printf("%s tpmt_open error\r\n", FILE_TPMTAPI);
+    if (tpm_open(&ectx)) {
+        printf("%s tpm_open error\r\n", FILE_TPMTAPI);
         return 1;
     }
     
-    if (tpmt_sign(ectx, TPMT_HANDLE_LEAFKEY, hash, hashlen, sig, siglen)) {
-        printf("%s tpmt_sign error\r\n", FILE_TPMTAPI);
-        tpmt_close(&ectx);
+    if (tpm_sign(ectx, TPM_HANDLE_LEAFKEY, hash, hashlen, sig, siglen)) {
+        printf("%s tpm_sign error\r\n", FILE_TPMTAPI);
+        tpm_close(&ectx);
         return 1;
     }
     
-    if (tpmt_close(&ectx)) {
-        printf("%s tpmt_close error\r\n", FILE_TPMTAPI);
+    if (tpm_close(&ectx)) {
+        printf("%s tpm_close error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     return 0;
 }
 
-uint8_t tpmt_fast_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uint16_t *msglen) {
+uint8_t tpm_fast_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uint16_t *msglen) {
     ESYS_CONTEXT *ectx = NULL;
     
-    if (tpmt_open(&ectx)) {
-        printf("%s tpmt_open error\r\n", FILE_TPMTAPI);
+    if (tpm_open(&ectx)) {
+        printf("%s tpm_open error\r\n", FILE_TPMTAPI);
         return 1;
     }
     
-    if (tpmt_decipher(ectx, TPMT_HANDLE_LEAFKEY, secret, secretlen, msg, msglen)) {
-        printf("%s tpmt_decipher error\r\n", FILE_TPMTAPI);
-        tpmt_close(&ectx);
+    if (tpm_decipher(ectx, TPM_HANDLE_LEAFKEY, secret, secretlen, msg, msglen)) {
+        printf("%s tpm_decipher error\r\n", FILE_TPMTAPI);
+        tpm_close(&ectx);
         return 1;
     }
     
-    if (tpmt_close(&ectx)) {
-        printf("%s tpmt_close error\r\n", FILE_TPMTAPI);
+    if (tpm_close(&ectx)) {
+        printf("%s tpm_close error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     return 0;
 }
 
-uint8_t tpmt_fast_getpk(uint32_t *exponent, uint8_t *mod, uint16_t *modlen) {
+uint8_t tpm_fast_getpk(uint32_t *exponent, uint8_t *mod, uint16_t *modlen) {
     ESYS_CONTEXT *ectx = NULL;
     
-    if (tpmt_open(&ectx)) {
-        printf("%s tpmt_open error\r\n", FILE_TPMTAPI);
+    if (tpm_open(&ectx)) {
+        printf("%s tpm_open error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
-    if (tpmt_readPublicKey(ectx, TPMT_HANDLE_LEAFKEY, exponent, mod, modlen)) {
-        printf("%s tpmt_readPublicKey error\r\n", FILE_TPMTAPI);
-        tpmt_close(&ectx);
+    if (tpm_readPublicKey(ectx, TPM_HANDLE_LEAFKEY, exponent, mod, modlen)) {
+        printf("%s tpm_readPublicKey error\r\n", FILE_TPMTAPI);
+        tpm_close(&ectx);
         return 1;
     }
 
-    if (tpmt_close(&ectx)) {
-        printf("%s tpmt_close error\r\n", FILE_TPMTAPI);
+    if (tpm_close(&ectx)) {
+        printf("%s tpm_close error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
     return 0;
 }
 
-uint8_t tpmt_fast_getRandom(uint8_t *rnd, uint16_t *len) {
+uint8_t tpm_fast_getRandom(uint8_t *rnd, uint16_t *len) {
     ESYS_CONTEXT *ectx = NULL;
     
-    if (tpmt_open(&ectx)) {
-        printf("%s tpmt_open error\r\n", FILE_TPMTAPI);
+    if (tpm_open(&ectx)) {
+        printf("%s tpm_open error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
-    if (tpmt_getRandom(ectx, rnd, len)) {
-        printf("%s tpmt_getRandom error\r\n", FILE_TPMTAPI);
-        tpmt_close(&ectx);
+    if (tpm_getRandom(ectx, rnd, len)) {
+        printf("%s tpm_getRandom error\r\n", FILE_TPMTAPI);
+        tpm_close(&ectx);
         return 1;
     }
 
-    if (tpmt_close(&ectx)) {
-        printf("%s tpmt_close error\r\n", FILE_TPMTAPI);
+    if (tpm_close(&ectx)) {
+        printf("%s tpm_close error\r\n", FILE_TPMTAPI);
         return 1;
     }
 
