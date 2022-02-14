@@ -13,6 +13,10 @@ int main (int argc, char *argv[])
         exit(1);
     }
 
+    if (tpm_wrap_perso()) {
+        printf("main() tpmt_wrap_perso error\n");
+        exit(1);
+    }
 
     return 0;
 }
