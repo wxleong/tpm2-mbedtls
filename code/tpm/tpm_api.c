@@ -161,22 +161,53 @@ uint8_t tpm_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *expo
     return 0;
 }
 
-uint8_t tpm_clearHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
-    ESYS_TR transientHandle;
+uint8_t tpm_clearTransientHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
+    ESYS_TR handle;
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, tHandle,
-                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &transientHandle);
+                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &handle);
     if (rval != TSS2_RC_SUCCESS) {
         printf("%s Esys_TR_FromTPMPublic error\r\n", FILE_TPMAPI);
         return 1;
     }
-    
-    rval = Esys_FlushContext(ectx, transientHandle);
+
+    rval = Esys_FlushContext(ectx, handle);
     if (rval != TPM2_RC_SUCCESS) {
         printf("%s Esys_FlushContext error\r\n", FILE_TPMAPI);
         return 1;
     }
 
-    printf("%s TPM clear handle: 0x%lx\r\n", FILE_TPMAPI, tHandle);
+    printf("%s TPM cleared transient handle: 0x%lx\r\n", FILE_TPMAPI, tHandle);
+    return 0;
+}
+
+uint8_t tpm_clearPersistentHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
+    TPM2B_DIGEST pwd;
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "owner123");
+
+    TSS2_RC rval = Esys_TR_SetAuth(ectx, ESYS_TR_RH_OWNER, &pwd);
+    if (rval != TPM2_RC_SUCCESS) {
+        printf("%s Esys_TR_SetAuth error\r\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    ESYS_TR handle;
+    rval = Esys_TR_FromTPMPublic(ectx, tHandle,
+                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &handle);
+    if (rval != TSS2_RC_SUCCESS) {
+        printf("%s Esys_TR_FromTPMPublic error\r\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    ESYS_TR dummy;
+    rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, handle,
+            ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, &dummy);
+    if (rval != TSS2_RC_SUCCESS) {
+        printf("%s Esys_EvictControl error\r\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    printf("%s TPM cleared persistent handle: 0x%lx\r\n", FILE_TPMAPI, tHandle);
     return 0;
 }
 
@@ -898,8 +929,14 @@ uint8_t tpm_wrap_clear(void) {
         return 1;
     }
 
-    if (tpm_forceClear(ectx)) {
-        printf("%s tpm_forceClear error\r\n", FILE_TPMAPI);
+    if (tpm_clearPersistentHandle(ectx, TPM_HANDLE_LEAFKEY)) {
+        printf("%s tpm_clearPersistentHandle(TPM_HANDLE_LEAFKEY) error\r\n", FILE_TPMAPI);
+        tpm_close(&ectx);
+        return 1;
+    }
+
+    if (tpm_clearPersistentHandle(ectx, TPM_HANDLE_PRIMARYKEY)) {
+        printf("%s tpm_clearPersistentHandle(TPM_HANDLE_PRIMARYKEY) error\r\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }

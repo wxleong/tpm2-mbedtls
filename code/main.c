@@ -8,13 +8,13 @@ int main (int argc, char *argv[])
     (void) argc;
     (void) argv;
 
-    if (tpm_wrap_clear()) {
-        printf("main() tpmt_wrap_clear error\n");
+    if (tpm_wrap_perso()) {
+        printf("main() tpm_wrap_perso error\n");
         exit(1);
     }
 
-    if (tpm_wrap_perso()) {
-        printf("main() tpmt_wrap_perso error\n");
+    if (tpm_wrap_clear()) {
+        printf("main() tpm_wrap_clear error\n");
         exit(1);
     }
 

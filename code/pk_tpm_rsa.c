@@ -1,4 +1,5 @@
 #include "pk_tpm.h"
+#include "tpm_api.h"
 
 static size_t tpm_rsa_get_bitlen( const void *ctx )
 {
@@ -66,6 +67,11 @@ static int tpm_rsa_check_pair( const void *pub, const void *prv )
 
 static void *tpm_rsa_alloc( void )
 {
+    if (tpm_wrap_perso()) {
+        printf("tpm_wrap_perso error\n");
+        return NULL;
+    }
+
     mbedtls_tpm_rsa *ctx = mbedtls_calloc( 1, sizeof( mbedtls_tpm_rsa ) );
 
     if (ctx != NULL)
@@ -81,7 +87,10 @@ static void tpm_rsa_free( void *ctx )
         mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
         mbedtls_rsa_free(&self->rsa);
         mbedtls_free( ctx );
-    }
+        if (tpm_wrap_clear()) {
+            printf("tpm_wrap_clear error\n");
+        }
+   }
 }
 
 static void tpm_rsa_debug( const void *ctx, mbedtls_pk_debug_item *items )
