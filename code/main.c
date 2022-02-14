@@ -8,8 +8,8 @@ int main (int argc, char *argv[])
     (void) argc;
     (void) argv;
 
-    if (tpm_fast_clear()) {
-        printf("main() tpmt_fast_clear error\n");
+    if (tpm_wrap_clear()) {
+        printf("main() tpmt_wrap_clear error\n");
         exit(1);
     }
 

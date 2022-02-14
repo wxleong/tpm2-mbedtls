@@ -50,11 +50,11 @@ uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain, u
 uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain, uint16_t lenin, uint8_t *dataout, uint16_t *lenout);
 uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest, uint16_t digestlen, uint8_t *sig, uint16_t siglen, uint8_t *result);
 
-uint8_t tpm_fast_clear(void);
-uint8_t tpm_fast_perso(void);
-uint8_t tpm_fast_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uint16_t *msglen);
-uint8_t tpm_fast_sign(uint8_t *hash, uint16_t hashlen, uint8_t *sig, uint16_t *siglen);
-uint8_t tpm_fast_getpk(uint32_t *exponent, uint8_t *mod, uint16_t *modlen);
-uint8_t tpm_fast_getRandom(uint8_t *rnd, uint16_t *len);
+uint8_t tpm_wrap_clear(void);
+uint8_t tpm_wrap_perso(void);
+uint8_t tpm_wrap_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uint16_t *msglen);
+uint8_t tpm_wrap_sign(uint8_t *hash, uint16_t hashlen, uint8_t *sig, uint16_t *siglen);
+uint8_t tpm_wrap_getpk(uint32_t *exponent, uint8_t *mod, uint16_t *modlen);
+uint8_t tpm_wrap_getRandom(uint8_t *rnd, uint16_t *len);
 
 #endif
