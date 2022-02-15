@@ -33,15 +33,22 @@ int main (int argc, char *argv[])
     mbedtls_pk_init( &ctx );
 
     if ( rc = mbedtls_pk_setup( &ctx, &tpm_rsa_info ) ) {
-        mbedtls_strerror( rc, err, 500 );
+        mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_setup error: %s\n", err );
         exit( 1 );
     }
 
-    if ( rc = mbedtls_pk_sign( &ctx, MBEDTLS_MD_SHA256, hash, sizeof(hash), sig,
-                     &sig_len, NULL, NULL ) ) {
-        mbedtls_strerror( rc, err, 500 );
+    if ( rc = mbedtls_pk_sign( &ctx, MBEDTLS_MD_SHA256, hash,
+                     sizeof( hash ), sig, &sig_len, NULL, NULL ) ) {
+        mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_sign error: %s\n", err );
+        exit( 1 );
+    }
+
+    if ( rc = mbedtls_pk_verify( &ctx, MBEDTLS_MD_SHA256, hash,
+                     sizeof( hash ), sig, sig_len ) ) {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() mbedtls_pk_verify error: %s\n", err );
         exit( 1 );
     }
 
