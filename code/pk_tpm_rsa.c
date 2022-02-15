@@ -17,6 +17,40 @@ static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
                                      const unsigned char *hash, size_t hash_len,
                                      const unsigned char *sig, size_t sig_len )
 {
+    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
+    size_t rsa_len = mbedtls_rsa_get_len( &self->rsa );
+    int ret = 0;
+
+    if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len )
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+    /* library limitation */
+    if(md_alg != MBEDTLS_MD_SHA256)
+        return( MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE );
+
+    if( sig_len < rsa_len )
+        return( MBEDTLS_ERR_RSA_VERIFY_FAILED );
+
+    if( hash_len == 0 )
+    {
+        const mbedtls_md_info_t *md_info;
+
+        md_info = mbedtls_md_info_from_type( md_alg );
+        if( md_info == NULL )
+            return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+
+        hash_len = mbedtls_md_get_size( md_info );
+    }
+
+    if( ret = mbedtls_rsa_pkcs1_verify( &self->rsa, NULL, NULL,
+                                        MBEDTLS_RSA_PUBLIC, md_alg,
+                                        (unsigned int) hash_len, hash, sig ) )
+        return( ret );
+
+
+    if( sig_len > rsa_len )
+        return( MBEDTLS_ERR_PK_SIG_LEN_MISMATCH );
+
     return( 0 );
 }
 
