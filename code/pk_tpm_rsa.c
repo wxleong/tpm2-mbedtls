@@ -50,7 +50,7 @@ static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
 
     *sig_len = mbedtls_rsa_get_len( &self->rsa );
 
-    if ( tpm_wrap_sign(hash, hash_len, sig, sig_len) ) {
+    if ( tpm_wrapped_sign(hash, hash_len, sig, sig_len) ) {
         return( MBEDTLS_ERR_RSA_PRIVATE_FAILED );
     }
 
@@ -95,19 +95,25 @@ static int tpm_rsa_check_pair( const void *pub, const void *prv )
 
 static void *tpm_rsa_alloc( void )
 {
-    if ( tpm_wrap_perso() ) {
-        printf( "tpm_wrap_perso error\n" );
+    if ( tpm_wrapped_perso() ) {
+        printf( "tpm_wrapped_perso error\n" );
         return NULL;
     }
 
     mbedtls_tpm_rsa *ctx = mbedtls_calloc( 1, sizeof( mbedtls_tpm_rsa ) );
 
     if ( ctx != NULL ) {
+        int exponent;
+        unsigned char mod[256];
+        size_t modlen = sizeof(mod);
         mbedtls_rsa_context *rsa = &ctx->rsa;
+
         mbedtls_rsa_init( rsa, 0, 0 );
 
         /* length of RSA modulus in bytes */
-        tpm_readRsaLeafKeyByteLen( &rsa->len );
+        //tpm_readRsaLeafKeyByteLen( &rsa->len );
+        rsa->len = 256;
+
     }
 
     return( ctx );
@@ -120,8 +126,8 @@ static void tpm_rsa_free( void *ctx )
         mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
         mbedtls_rsa_free( &self->rsa );
         mbedtls_free( ctx );
-        /*if ( tpm_wrap_clear() ) {
-            printf( "tpm_wrap_clear error\n" );
+        /*if ( tpm_wrapped_clear() ) {
+            printf( "tpm_wrapped_clear error\n" );
         }*/
    }
 }

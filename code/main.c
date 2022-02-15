@@ -19,13 +19,13 @@ int main (int argc, char *argv[])
     memset( sig, 0, sizeof( sig ));
 
 /*
-    if ( tpm_wrap_clear() ) {
-        printf( "main() tpm_wrap_clear error\n" );
+    if ( tpm_wrapped_clear() ) {
+        printf( "main() tpm_wrapped_clear error\n" );
         exit( 1 );
     }
 
-    if ( tpm_wrap_perso() ) {
-        printf( "main() tpm_wrap_perso error\n" );
+    if ( tpm_wrapped_perso() ) {
+        printf( "main() tpm_wrapped_perso error\n" );
         exit( 1 );
     }
 */

@@ -403,10 +403,6 @@ err1:
     return 0;
 }
 
-void tpm_readRsaLeafKeyByteLen(size_t *len) {
-    *len = TPM2_RSA_KEY_BYTES;
-}
-
 uint8_t tpm_createPrimaryKey(ESYS_CONTEXT *ectx) {
     TPM2B_DIGEST pwd;
     pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SH);
@@ -943,7 +939,7 @@ uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
     return 0;
 }
 
-uint8_t tpm_wrap_clear(void) {
+uint8_t tpm_wrapped_clear(void) {
     ESYS_CONTEXT *ectx = NULL;
 
     if (tpm_open(&ectx)) {
@@ -971,7 +967,7 @@ uint8_t tpm_wrap_clear(void) {
     return 0;
 }
 
-uint8_t tpm_wrap_perso(void) {
+uint8_t tpm_wrapped_perso(void) {
     ESYS_CONTEXT *ectx = NULL;
     uint8_t count = 0, found = 0;
     TPM2_HANDLE *persistent_sys_handles = NULL;
@@ -1053,7 +1049,7 @@ uint8_t tpm_wrap_perso(void) {
     return 0;
 }
 
-uint8_t tpm_wrap_sign(const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen) {
+uint8_t tpm_wrapped_sign(const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {
@@ -1075,7 +1071,7 @@ uint8_t tpm_wrap_sign(const unsigned char *hash, size_t hashlen, unsigned char *
     return 0;
 }
 
-uint8_t tpm_wrap_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uint16_t *msglen) {
+uint8_t tpm_wrapped_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uint16_t *msglen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {
@@ -1097,7 +1093,7 @@ uint8_t tpm_wrap_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uin
     return 0;
 }
 
-uint8_t tpm_wrap_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen) {
+uint8_t tpm_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {
@@ -1119,7 +1115,7 @@ uint8_t tpm_wrap_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen) {
     return 0;
 }
 
-uint8_t tpm_wrap_getRandom(uint8_t *rnd, uint16_t *len) {
+uint8_t tpm_wrapped_getRandom(uint8_t *rnd, uint16_t *len) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {
