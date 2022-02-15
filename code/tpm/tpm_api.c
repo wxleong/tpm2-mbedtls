@@ -145,12 +145,6 @@ uint8_t tpm_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *expo
         printf("%s Esys_ReadPublic error\r\n", FILE_TPMAPI);
         return 1;
     }
-    
-    // Close encrypted session
-    if (tpm_closeEncryptedSession(ectx, sHandle)) {
-        printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMAPI);
-        return 1;
-    }
 
     *exponent = outPublic->publicArea.parameters.rsaDetail.exponent;
     if (*exponent == 0)
@@ -164,11 +158,19 @@ uint8_t tpm_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *expo
     }
     *modlen = len;
     memcpy(mod, outPublic->publicArea.unique.rsa.buffer, len);
-    
+
     free(nameKeySign);
     free(keyQualifiedName);
     free(outPublic);
+
     printf("%s TPM read public key of handle: 0x%lx\r\n", FILE_TPMAPI, handle);
+
+    // Close encrypted session
+    if (tpm_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMAPI);
+        return 1;
+    }
+
     return 0;
 }
 
@@ -639,13 +641,14 @@ uint8_t tpm_getRandom(ESYS_CONTEXT *ectx, uint8_t *rnd, uint16_t *len) {
     memcpy(rnd, random_bytes->buffer, *len);
     free(random_bytes);
 
+    printf("%s TPM get random\r\n", FILE_TPMAPI);
+
     // Close encrypted session
     if (tpm_closeEncryptedSession(ectx, sHandle)) {
         printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMAPI);
         return 1;
     }
 
-    printf("%s TPM get random\r\n", FILE_TPMAPI);
     return 0;
 }
 
@@ -706,13 +709,14 @@ uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     
     free(encrypted_msg);
 
+    printf("%s TPM encryption using RSA key handle 0x%lx\r\n", FILE_TPMAPI, pHandle);
+
     // Close encrypted session
     if (tpm_closeEncryptedSession(ectx, sHandle)) {
         printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMAPI);
         return 1;
     }
 
-    printf("%s TPM encryption using RSA key handle 0x%lx\r\n", FILE_TPMAPI, pHandle);
     return 0;
 }
 
@@ -779,13 +783,14 @@ uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     
     free(decrypted_msg);
 
+    printf("%s TPM decryption using RSA key handle 0x%lx\r\n", FILE_TPMAPI, pHandle);
+
     // Close encrypted session
     if (tpm_closeEncryptedSession(ectx, sHandle)) {
         printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMAPI);
         return 1;
     }
 
-    printf("%s TPM decryption using RSA key handle 0x%lx\r\n", FILE_TPMAPI, pHandle);
     return 0;
 }
 
@@ -863,13 +868,14 @@ uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned char *d
 
     free(signature);
 
+    printf("%s TPM signing using RSA key handle 0x%lx\r\n", FILE_TPMAPI, pHandle);
+
     // Close encrypted session
     if (tpm_closeEncryptedSession(ectx, sHandle)) {
         printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMAPI);
         return 1;
     }
 
-    printf("%s TPM signing using RSA key handle 0x%lx\r\n", FILE_TPMAPI, pHandle);
     return 0;
 
 }
@@ -926,13 +932,14 @@ uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
     *result = 1;
     free(validation);
 
+    printf("%s TPM verification using RSA key handle 0x%lx\r\n", FILE_TPMAPI, pHandle);
+
     // Close encrypted session
     if (tpm_closeEncryptedSession(ectx, sHandle)) {
         printf("%s tpm_closeEncryptedSession error\r\n", FILE_TPMAPI);
         return 1;
     }
 
-    printf("%s TPM verification using RSA key handle 0x%lx\r\n", FILE_TPMAPI, pHandle);
     return 0;
 }
 
