@@ -115,13 +115,13 @@ static int tpm_rsa_check_pair( const void *pub, const void *prv )
     int ret;
 
     if( ( ret = tpm_rsa_sign( (void *) prv, MBEDTLS_MD_SHA256,
-                                   hash, sizeof( hash ),
-                                   sig, &sig_len, NULL, NULL ) ) != 0 )
+                              hash, sizeof( hash ),
+                              sig, &sig_len, NULL, NULL ) ) != 0 )
         return( ret );
 
     if(mbedtls_rsa_pkcs1_verify( (mbedtls_rsa_context *) pub, NULL, NULL,
-                                  MBEDTLS_RSA_PUBLIC, MBEDTLS_MD_SHA256,
-                                  (unsigned int) sizeof( hash ), hash, sig ) != 0 )
+                                 MBEDTLS_RSA_PUBLIC, MBEDTLS_MD_SHA256,
+                                 (unsigned int) sizeof( hash ), hash, sig ) != 0 )
         return( MBEDTLS_ERR_RSA_KEY_CHECK_FAILED );
 
     return 0;

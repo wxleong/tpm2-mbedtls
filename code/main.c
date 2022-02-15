@@ -52,6 +52,12 @@ int main (int argc, char *argv[])
         exit( 1 );
     }
 
+    if ( rc = mbedtls_pk_check_pair( &ctx, &ctx ) ) {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() mbedtls_pk_check_pair error: %s\n", err );
+        exit( 1 );
+    }
+
     mbedtls_pk_free( &ctx );
 
     return 0;
