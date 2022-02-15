@@ -45,7 +45,7 @@ void    tpm_readRsaLeafKeyByteLen(size_t *len);
 uint8_t tpm_persistHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDLE pHandle);
 uint8_t tpm_clearTransientHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle);
 uint8_t tpm_clearPersistentHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle);
-uint8_t tpm_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *exponent, uint8_t *mod, uint16_t *modlen);
+uint8_t tpm_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponent, unsigned char *mod, size_t *modlen);
 uint8_t tpm_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, uint8_t *num_handle, TPM2_HANDLE **sys_handles);
 uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain, uint16_t lenin, uint8_t *dataout, uint16_t *lenout);
 uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain, uint16_t lenin, uint8_t *dataout, uint16_t *lenout);
@@ -56,7 +56,7 @@ uint8_t tpm_wrap_clear(void);
 uint8_t tpm_wrap_perso(void);
 uint8_t tpm_wrap_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uint16_t *msglen);
 uint8_t tpm_wrap_sign(const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen);
-uint8_t tpm_wrap_getpk(uint32_t *exponent, uint8_t *mod, uint16_t *modlen);
+uint8_t tpm_wrap_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen);
 uint8_t tpm_wrap_getRandom(uint8_t *rnd, uint16_t *len);
 
 #endif

@@ -118,7 +118,7 @@ uint8_t tpm_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, uint8_t *count, TP
     return 0;
 }
 
-uint8_t tpm_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *exponent, uint8_t *mod, uint16_t *modlen) {
+uint8_t tpm_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponent, unsigned char *mod, size_t *modlen) {
 
     TPM2B_NAME *nameKeySign;
     TPM2B_NAME *keyQualifiedName;
@@ -153,7 +153,7 @@ uint8_t tpm_readPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, uint32_t *expo
     uint16_t len = outPublic->publicArea.unique.rsa.size;
     
     if (len > *modlen) {
-        printf("%s tpm_readPublicKey output buffer insufficient error\r\n", FILE_TPMAPI);
+        printf("%s tpm_readRsaPublicKey output buffer insufficient error\r\n", FILE_TPMAPI);
         return 1;
     }
     *modlen = len;
@@ -1097,7 +1097,7 @@ uint8_t tpm_wrap_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uin
     return 0;
 }
 
-uint8_t tpm_wrap_getpk(uint32_t *exponent, uint8_t *mod, uint16_t *modlen) {
+uint8_t tpm_wrap_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {
@@ -1105,8 +1105,8 @@ uint8_t tpm_wrap_getpk(uint32_t *exponent, uint8_t *mod, uint16_t *modlen) {
         return 1;
     }
 
-    if (tpm_readPublicKey(ectx, TPM_HANDLE_LEAFKEY, exponent, mod, modlen)) {
-        printf("%s tpm_readPublicKey error\r\n", FILE_TPMAPI);
+    if (tpm_readRsaPublicKey(ectx, TPM_HANDLE_LEAFKEY, exponent, mod, modlen)) {
+        printf("%s tpm_readRsaPublicKey error\r\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
