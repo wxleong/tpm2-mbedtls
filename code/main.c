@@ -12,11 +12,11 @@ int main (int argc, char *argv[])
         printf("main() tpm_wrap_perso error\n");
         exit(1);
     }
-
+/*
     if (tpm_wrap_clear()) {
         printf("main() tpm_wrap_clear error\n");
         exit(1);
     }
-
+*/
     return 0;
 }

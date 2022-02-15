@@ -97,10 +97,15 @@ uint8_t tpm_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, uint8_t *count, TP
 
     *count = (uint8_t) fetched_data->data.handles.count;
 
-    if (sys_handles != NULL) {
+    if (sys_handles != NULL && *count > 0) {
         size_t i = 0;
-        for (; i<*count; i++)
-            **(sys_handles + i) = fetched_data->data.handles.handle[i];
+        *sys_handles = malloc(sizeof(TPM2_HANDLE)*(*count));
+        printf("%s TPM found %d handles:\r\n", FILE_TPMAPI, *count);
+
+        for (; i<*count; i++) {
+            printf("%s - 0x%lx\r\n", FILE_TPMAPI, fetched_data->data.handles.handle[i]);
+            *((*sys_handles) + i) = fetched_data->data.handles.handle[i];
+        }
     }
 
     free(fetched_data);
@@ -952,14 +957,13 @@ uint8_t tpm_wrap_clear(void) {
 uint8_t tpm_wrap_perso(void) {
     ESYS_CONTEXT *ectx = NULL;
     uint8_t count = 0, found = 0;
-    TPM2_HANDLE **persistent_sys_handles = NULL;
+    TPM2_HANDLE *persistent_sys_handles = NULL;
     
     if (tpm_open(&ectx)) {
         printf("%s tpm_open error\r\n", FILE_TPMAPI);
         return 1;
     }
 
-    
     // get number of keys
     if (tpm_getSysHandle(ectx, TPM2_PERSISTENT_FIRST, &count, NULL)) {
         printf("%s tpm_getSysHandle error\r\n", FILE_TPMAPI);
@@ -970,25 +974,23 @@ uint8_t tpm_wrap_perso(void) {
     // check keys
     if (count > 0) {
         size_t i = 0;
-        persistent_sys_handles = malloc(sizeof(TPM2_HANDLE)*count);
-
-        if (persistent_sys_handles == NULL)
-            return 1;
 
         // look for existing keys
-        if (tpm_getSysHandle(ectx, TPM2_PERSISTENT_FIRST, &count, persistent_sys_handles)) {
+        if (tpm_getSysHandle(ectx, TPM2_PERSISTENT_FIRST, &count, &persistent_sys_handles)) {
             printf("%s tpm_getSysHandle error\r\n", FILE_TPMAPI);
             tpm_close(&ectx);
+            free(persistent_sys_handles);
             return 1;
         }
 
-        for (; i<count; i++) {
-            if (**(persistent_sys_handles + i) == TPM_HANDLE_PRIMARYKEY
-                    || **(persistent_sys_handles + i) == TPM_HANDLE_LEAFKEY) {
+        for (i=0 ; i<count; i++) {
+            if (*(persistent_sys_handles + i) == TPM_HANDLE_PRIMARYKEY
+                    || *(persistent_sys_handles + i) == TPM_HANDLE_LEAFKEY) {
                 found++;
-                printf("%s found key handle %04x\r\n", FILE_TPMAPI, **(persistent_sys_handles + i));
             }
         } 
+
+        free(persistent_sys_handles);
     }
 
     // initialize tpm if key not found
