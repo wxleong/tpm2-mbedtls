@@ -32,6 +32,12 @@
 #define TPM2_RSA_KEY_BYTES TPM2_RSA_KEY_BITS/8
 #define TPM2_RSA_HASH_BYTES 32
 
+#define TPM2_AUTH_SH "owner123" // storage hierarchy
+#define TPM2_AUTH_EH "endorsement123" // endorsement hierarchy
+#define TPM2_AUTH_LOCKOUT "lockout123"
+#define TPM2_AUTH_SRK "srk123" // storage root key / primary key
+#define TPM2_AUTH_LEAFKEY "leaf123"
+
 uint8_t tpm_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle);
 uint8_t tpm_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle);
 
@@ -187,7 +193,7 @@ uint8_t tpm_clearTransientHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
 
 uint8_t tpm_clearPersistentHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
     TPM2B_DIGEST pwd;
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "owner123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SH);
 
     TSS2_RC rval = Esys_TR_SetAuth(ectx, ESYS_TR_RH_OWNER, &pwd);
     if (rval != TPM2_RC_SUCCESS) {
@@ -218,7 +224,7 @@ uint8_t tpm_clearPersistentHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
 
 uint8_t tpm_persistHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDLE pHandle) {
     TPM2B_DIGEST pwd;
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "owner123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SH);
     
     TSS2_RC rval = Esys_TR_SetAuth(ectx, ESYS_TR_RH_OWNER, &pwd);
     if (rval != TPM2_RC_SUCCESS) {
@@ -266,7 +272,7 @@ uint8_t tpm_createLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
         }
         
         TPM2B_DIGEST pwd;
-        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "RSAprimary123");
+        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SRK);
         
         rval = Esys_TR_SetAuth(ectx, primaryHandle, &pwd);
         if (rval != TPM2_RC_SUCCESS) {
@@ -274,7 +280,7 @@ uint8_t tpm_createLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
             return 1;
         }
 
-        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "RSAleaf123");
+        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_LEAFKEY);
         
         TPM2B_SENSITIVE_CREATE inSensitiveLeaf = {
             .size = 4,
@@ -353,7 +359,7 @@ uint8_t tpm_createLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
         }
         
         TPM2B_DIGEST pwd;
-        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "RSAprimary123");
+        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SRK);
         
         rval = Esys_TR_SetAuth(ectx, primaryHandle, &pwd);
         if (rval != TPM2_RC_SUCCESS) {
@@ -397,7 +403,7 @@ err1:
 
 uint8_t tpm_createPrimaryKey(ESYS_CONTEXT *ectx) {
     TPM2B_DIGEST pwd;
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "owner123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SH);
     
     TSS2_RC rval = Esys_TR_SetAuth(ectx, ESYS_TR_RH_OWNER, &pwd);
     if (rval != TPM2_RC_SUCCESS) {
@@ -405,7 +411,7 @@ uint8_t tpm_createPrimaryKey(ESYS_CONTEXT *ectx) {
         return 1;
     }
 
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "RSAprimary123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SRK);
     
     TPM2B_SENSITIVE_CREATE inSensitivePrimary = {
         .size = 4,
@@ -498,7 +504,7 @@ uint8_t tpm_takeOwnership(ESYS_CONTEXT *ectx) {
     TPM2B_DIGEST pwd;
     
     /* Set owner password */
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "owner123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SH);
     TSS2_RC rval = Esys_HierarchyChangeAuth(ectx, ESYS_TR_RH_OWNER,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
             &pwd);
@@ -510,7 +516,7 @@ uint8_t tpm_takeOwnership(ESYS_CONTEXT *ectx) {
     //printf("%s TPM set owner password ok\r\n", FILE_TPMAPI);
     
     /* Set endorsement password */
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "endorsement123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_EH);
     rval = Esys_HierarchyChangeAuth(ectx, ESYS_TR_RH_ENDORSEMENT,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
             &pwd);
@@ -522,7 +528,7 @@ uint8_t tpm_takeOwnership(ESYS_CONTEXT *ectx) {
     //printf("%s TPM set endorsement password ok\r\n", FILE_TPMAPI);
     
     /* Set lockout password */
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "lockout123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_LOCKOUT);
     rval = Esys_HierarchyChangeAuth(ectx, ESYS_TR_RH_LOCKOUT,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
             &pwd);
@@ -552,7 +558,7 @@ uint8_t tpm_forceClear(ESYS_CONTEXT *ectx) {
 uint8_t tpm_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle) {
     // Get primary key handle
     TPM2B_DIGEST pwd;
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "RSAprimary123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SRK);
     TPM2_HANDLE tHandle = TPM_HANDLE_PRIMARYKEY;
     ESYS_TR pHandle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, tHandle,
@@ -736,7 +742,7 @@ uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     }
 
     TPM2B_DIGEST pwd;
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "RSAleaf123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_LEAFKEY);
 
     rval = Esys_TR_SetAuth(ectx, keyHandle, &pwd);
     if (rval != TPM2_RC_SUCCESS) {
@@ -809,7 +815,7 @@ uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     }
 
     TPM2B_DIGEST pwd;
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", "RSAleaf123");
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_LEAFKEY);
     
     rval = Esys_TR_SetAuth(ectx, keyHandle, &pwd);
     if (rval != TPM2_RC_SUCCESS) {
