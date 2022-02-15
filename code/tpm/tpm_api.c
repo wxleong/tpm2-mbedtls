@@ -254,7 +254,7 @@ uint8_t tpm_persistHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDLE p
     return 0;
 }
 
-uint8_t tpm_createLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
+uint8_t tpm_createRsaLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
 {
     TPM2B_PUBLIC            *outPublic;
     TPM2B_PRIVATE           *outPrivate;
@@ -399,6 +399,10 @@ err1:
     free(outPublic);
     free(outPrivate);
     return 0;
+}
+
+void tpm_readRsaLeafKeyByteLen(size_t *len) {
+    *len = TPM2_RSA_KEY_BYTES;
 }
 
 uint8_t tpm_createPrimaryKey(ESYS_CONTEXT *ectx) {
@@ -785,8 +789,8 @@ uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     return 0;
 }
 
-uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
-                   uint16_t lenin, uint8_t *dataout, uint16_t *lenout) {
+uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned char *datain,
+                 size_t lenin, unsigned char *dataout, size_t *lenout) {
     
     if (lenin != TPM2_RSA_HASH_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
         printf("%s tpm_sign invalid length error\r\n", FILE_TPMAPI);
@@ -1001,6 +1005,9 @@ uint8_t tpm_wrap_perso(void) {
 
     // initialize tpm if key not found
     if (found != 2) {
+
+        printf("%s keys not found, resetting your TPM\r\n", FILE_TPMAPI);
+
         if (tpm_forceClear(ectx)) {
             printf("%s tpm_forceClear error\r\n", FILE_TPMAPI);
             tpm_close(&ectx);
@@ -1019,7 +1026,7 @@ uint8_t tpm_wrap_perso(void) {
             return 1;
         }
 
-        if (tpm_createLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
+        if (tpm_createRsaLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
             printf("%s tpm_createLeafKey error\r\n", FILE_TPMAPI);
             tpm_close(&ectx);
             return 1;
@@ -1039,7 +1046,7 @@ uint8_t tpm_wrap_perso(void) {
     return 0;
 }
 
-uint8_t tpm_wrap_sign(uint8_t *hash, uint16_t hashlen, uint8_t *sig, uint16_t *siglen) {
+uint8_t tpm_wrap_sign(const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {

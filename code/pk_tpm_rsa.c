@@ -26,6 +26,34 @@ static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
                                     int (*f_rng)(void *, unsigned char *, size_t),
                                     void *p_rng )
 {
+    (void) f_rng;
+    (void) p_rng;
+    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
+
+    if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len )
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+    /* library limitation */
+    if(md_alg != MBEDTLS_MD_SHA256)
+        return( MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE );
+
+    if( hash_len == 0 )
+    {
+        const mbedtls_md_info_t *md_info;
+
+        md_info = mbedtls_md_info_from_type( md_alg );
+        if( md_info == NULL )
+            return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+
+        hash_len = mbedtls_md_get_size( md_info );
+    }
+
+    *sig_len = mbedtls_rsa_get_len( &self->rsa );
+
+    if ( tpm_wrap_sign(hash, hash_len, sig, sig_len) ) {
+        return( MBEDTLS_ERR_RSA_PRIVATE_FAILED );
+    }
+
     return( 0 );
 }
 
@@ -67,15 +95,20 @@ static int tpm_rsa_check_pair( const void *pub, const void *prv )
 
 static void *tpm_rsa_alloc( void )
 {
-    if (tpm_wrap_perso()) {
-        printf("tpm_wrap_perso error\n");
+    if ( tpm_wrap_perso() ) {
+        printf( "tpm_wrap_perso error\n" );
         return NULL;
     }
 
     mbedtls_tpm_rsa *ctx = mbedtls_calloc( 1, sizeof( mbedtls_tpm_rsa ) );
 
-    if (ctx != NULL)
-        mbedtls_rsa_init(&ctx->rsa, 0, 0);
+    if ( ctx != NULL ) {
+        mbedtls_rsa_context *rsa = &ctx->rsa;
+        mbedtls_rsa_init( rsa, 0, 0 );
+
+        /* length of RSA modulus in bytes */
+        tpm_readRsaLeafKeyByteLen( &rsa->len );
+    }
 
     return( ctx );
 }
@@ -85,25 +118,18 @@ static void tpm_rsa_free( void *ctx )
     if(ctx != NULL)
     {
         mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
-        mbedtls_rsa_free(&self->rsa);
+        mbedtls_rsa_free( &self->rsa );
         mbedtls_free( ctx );
-        if (tpm_wrap_clear()) {
-            printf("tpm_wrap_clear error\n");
-        }
+        /*if ( tpm_wrap_clear() ) {
+            printf( "tpm_wrap_clear error\n" );
+        }*/
    }
 }
 
 static void tpm_rsa_debug( const void *ctx, mbedtls_pk_debug_item *items )
 {
-    items->type = MBEDTLS_PK_DEBUG_MPI;
-    items->name = "rsa.N";
-    items->value = &( ((mbedtls_rsa_context *) ctx)->N );
-
-    items++;
-
-    items->type = MBEDTLS_PK_DEBUG_MPI;
-    items->name = "rsa.E";
-    items->value = &( ((mbedtls_rsa_context *) ctx)->E );
+    (void) ctx;
+    (void) items;
 }
 
 const mbedtls_pk_info_t tpm_rsa_info =

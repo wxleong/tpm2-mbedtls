@@ -1,3 +1,6 @@
+#ifndef PK_TPM_H_
+#define PK_TPM_H_
+
 #include "mbedtls/platform.h"
 #include "mbedtls/pk_internal.h"
 
@@ -9,6 +12,7 @@ typedef struct
     // handle
 } mbedtls_tpm_rsa;
 
-const mbedtls_pk_info_t tpm_rsa_info;
-const mbedtls_pk_info_t tpm_ecp_info;
+extern const mbedtls_pk_info_t tpm_rsa_info;
+extern const mbedtls_pk_info_t tpm_ecp_info;
 
+#endif
