@@ -93,6 +93,19 @@ static int tpm_rsa_check_pair( const void *pub, const void *prv )
     return 0;
 }
 
+static void tpm_rsa_free( void *ctx )
+{
+    if(ctx != NULL)
+    {
+        mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
+        mbedtls_rsa_free( &self->rsa );
+        mbedtls_free( ctx );
+        /*if ( tpm_wrapped_clear() ) {
+            printf( "tpm_wrapped_clear error\n" );
+        }*/
+   }
+}
+
 static void *tpm_rsa_alloc( void )
 {
     if ( tpm_wrapped_perso() ) {
@@ -106,30 +119,38 @@ static void *tpm_rsa_alloc( void )
         int exponent;
         unsigned char mod[256];
         size_t modlen = sizeof(mod);
+        const unsigned char exp[] = {0x1,0x0,0x1}; // exponent 65537
         mbedtls_rsa_context *rsa = &ctx->rsa;
 
         mbedtls_rsa_init( rsa, 0, 0 );
 
-        /* length of RSA modulus in bytes */
-        //tpm_readRsaLeafKeyByteLen( &rsa->len );
-        rsa->len = 256;
+        if ( tpm_wrapped_getRsaPk( &exponent, mod, &modlen ) ) {
+            printf( "tpm_wrapped_getRsaPk error\n" );
+            goto error;
+        }
 
+        mbedtls_rsa_init( rsa, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256 );
+        rsa->ver = 0;
+
+        if ( mbedtls_mpi_read_binary( &rsa->N, mod, modlen ) )
+            goto error;
+
+        if ( exponent != 65537 )
+            goto error;
+
+        if ( mbedtls_mpi_read_binary( &rsa->E, exp, 3 ) )
+            goto error;
+
+        rsa->len = mbedtls_mpi_bitlen( &rsa->N ) / 8;
+
+        if ( mbedtls_rsa_check_pubkey( rsa ) )
+            goto error;
     }
 
     return( ctx );
-}
-
-static void tpm_rsa_free( void *ctx )
-{
-    if(ctx != NULL)
-    {
-        mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
-        mbedtls_rsa_free( &self->rsa );
-        mbedtls_free( ctx );
-        /*if ( tpm_wrapped_clear() ) {
-            printf( "tpm_wrapped_clear error\n" );
-        }*/
-   }
+error:
+    tpm_rsa_free( ctx );
+    return NULL;
 }
 
 static void tpm_rsa_debug( const void *ctx, mbedtls_pk_debug_item *items )
