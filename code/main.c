@@ -12,11 +12,12 @@ typedef struct random_context {
     mbedtls_ctr_drbg_context drbg;
 } random_context;
 
-int tpm_rnd( void *rng_state,
-             unsigned char *output,
-             size_t len )
+int random_provider( void *rng_state,
+                     unsigned char *output,
+                     size_t len )
 {
     random_context *ctx = (random_context *) rng_state;
+
     return mbedtls_rnd_tpm_rand( &ctx->drbg, output, len );
 }
 
@@ -24,7 +25,7 @@ int main (int argc, char *argv[])
 {
     (void) argc;
     (void) argv;
-    random_context rnd_ctx;
+    random_context random_ctx;
     mbedtls_pk_context ctx;
     unsigned char message[32], out[256], hash[32], sig[64], err[500];
     size_t sig_len = 0, out_len = 0;
@@ -48,7 +49,7 @@ int main (int argc, char *argv[])
     }
 */
 
-    mbedtls_rnd_tpm_init( &rnd_ctx.drbg, &rnd_ctx.entropy );
+    mbedtls_rnd_tpm_init( &random_ctx.drbg, &random_ctx.entropy );
     mbedtls_pk_init( &ctx );
 
     if ( rc = mbedtls_pk_setup( &ctx, &tpm_rsa_info ) )
@@ -83,7 +84,7 @@ int main (int argc, char *argv[])
 
     if ( rc = mbedtls_pk_encrypt( &ctx, message, sizeof( message ),
                                   out, &out_len, sizeof( out ),
-                                  tpm_rnd, &rnd_ctx ) )
+                                  random_provider, &random_ctx ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_encrypt error: %s\n", err );
@@ -91,7 +92,7 @@ int main (int argc, char *argv[])
     }
 
     mbedtls_pk_free( &ctx );
-    mbedtls_rnd_tpm_free( &rnd_ctx.drbg, &rnd_ctx.entropy );
+    mbedtls_rnd_tpm_free( &random_ctx.drbg, &random_ctx.entropy );
 
     return 0;
 }
