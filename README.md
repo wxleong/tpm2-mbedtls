@@ -1,6 +1,6 @@
 # Introduction
 
-Enable hardware acceleration (OPTIGA™ TPM 2.0) on Mbed TLS.
+Enable crypto accelerator (OPTIGA™ TPM 2.0) on Mbed TLS.
 
 # Table of Contents
 
@@ -19,8 +19,18 @@ $ cd library
 $ make
 ```
 
+The following items are copied to [code/mbedtls-2.28.0](https://github.com/wxleong/tpm2-mbedtls/tree/develop-genesis/code/mbedtls-2.28.0):
 Header files: `~/mbedtls/include/mbedtls/`<br>
 Static libraries: `~/mbedtls/library/libmbedcrypto.a`, `~/mbedtls/library/libmbedtls.a`, and `~/mbedtls/library/libmbedx509.a`
+
+# Sample
+
+```
+$ git clone https://github.com/wxleong/tpm2-mbedtls ~/tpm2-mbedtls
+$ cd ~/tpm2-mbedtls/code
+$ make
+$ ./main
+```
 
 # References
 
