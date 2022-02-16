@@ -9,8 +9,7 @@ static size_t tpm_rsa_get_bitlen( const void *ctx )
 
 static int tpm_rsa_can_do( mbedtls_pk_type_t type )
 {
-    return( type == MBEDTLS_PK_RSA ||
-            type == MBEDTLS_PK_RSASSA_PSS );
+    return( type == MBEDTLS_PK_RSA );
 }
 
 static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
@@ -163,7 +162,8 @@ static void *tpm_rsa_alloc( void )
             goto error;
         }
 
-        mbedtls_rsa_init( rsa, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256 );
+        // set RSA signature schemes to RSASSA-PKCS1-v1_5
+        mbedtls_rsa_init( rsa, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_NONE );
         rsa->ver = 0;
 
         if ( mbedtls_mpi_read_binary( &rsa->N, mod, modlen ) )
