@@ -94,6 +94,16 @@ static int tpm_rsa_decrypt( void *ctx,
                             unsigned char *output, size_t *olen, size_t osize,
                             int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
+    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*) ctx;
+
+    if( ilen != mbedtls_rsa_get_len( &self->rsa ) )
+        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+
+    *olen = osize;
+
+    if ( tpm_wrapped_decipher(input, ilen, output, olen) )
+        return( MBEDTLS_ERR_RSA_PRIVATE_FAILED );
+
     return( 0 );
 }
 

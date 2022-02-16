@@ -683,13 +683,17 @@ uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
         .buffer = {0}
     };
 
-    TPMT_RSA_DECRYPT scheme = { 
+    /*TPMT_RSA_DECRYPT scheme = { 
         .scheme = TPM2_ALG_OAEP,
         .details = {
             .oaep = {
-                .hashAlg = TPM2_ALG_SHA1
+                .hashAlg = TPM2_ALG_SHA256
             }
         }
+    };*/
+
+    TPMT_RSA_DECRYPT scheme = { 
+        .scheme = TPM2_ALG_RSAES
     };
 
     rval = Esys_RSA_Encrypt(ectx, keyHandle,
@@ -716,8 +720,8 @@ uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     return 0;
 }
 
-uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
-           uint16_t lenin, uint8_t *dataout, uint16_t *lenout) {
+uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned char *datain,
+           size_t lenin, unsigned char *dataout, size_t *lenout) {
 
     if (lenin > TPM2_RSA_KEY_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
         printf("%s tpm_decipher invalid length error\r\n", FILE_TPMAPI);
@@ -759,13 +763,16 @@ uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
         .buffer = {0}
     };
 
-    TPMT_RSA_DECRYPT scheme = { 
+    /*TPMT_RSA_DECRYPT scheme = { 
         .scheme = TPM2_ALG_OAEP,
         .details = {
             .oaep = {
-                .hashAlg = TPM2_ALG_SHA1
+                .hashAlg = TPM2_ALG_SHA256
             }
         }
+    };*/
+    TPMT_RSA_DECRYPT scheme = { 
+        .scheme = TPM2_ALG_RSAES
     };
 
     rval = Esys_RSA_Decrypt(ectx, keyHandle, sHandle, ESYS_TR_NONE, ESYS_TR_NONE,&encrypted_msg, &scheme, &null_data, &decrypted_msg);
@@ -773,7 +780,12 @@ uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
         printf("%s Esys_RSA_Decrypt error\r\n", FILE_TPMAPI);
         return 1;
     }
-    
+
+    if (*lenout < decrypted_msg->size) {
+        printf("%s insufficient buffer size error\r\n", FILE_TPMAPI);
+        return 1;
+    }
+   
     memcpy(dataout, decrypted_msg->buffer, decrypted_msg->size);
     *lenout = decrypted_msg->size;
     
@@ -1071,7 +1083,7 @@ uint8_t tpm_wrapped_sign(const unsigned char *hash, size_t hashlen, unsigned cha
     return 0;
 }
 
-uint8_t tpm_wrapped_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, uint16_t *msglen) {
+uint8_t tpm_wrapped_decipher(const unsigned char *input, size_t inlen, unsigned char *output, size_t *outlen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {
@@ -1079,7 +1091,7 @@ uint8_t tpm_wrapped_decipher(uint8_t *secret, uint16_t secretlen, uint8_t *msg, 
         return 1;
     }
     
-    if (tpm_decipher(ectx, TPM_HANDLE_LEAFKEY, secret, secretlen, msg, msglen)) {
+    if (tpm_decipher(ectx, TPM_HANDLE_LEAFKEY, input, inlen, output, outlen)) {
         printf("%s tpm_decipher error\r\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;

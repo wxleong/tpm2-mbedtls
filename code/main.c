@@ -27,13 +27,15 @@ int main (int argc, char *argv[])
     (void) argv;
     random_context random_ctx;
     mbedtls_pk_context ctx;
-    unsigned char message[32], out[256], hash[32], sig[64], err[500];
-    size_t sig_len = 0, out_len = 0;
+    unsigned char message[32], cipher[256], decipher[256], hash[32], sig[64], err[500];
+    size_t sig_len = 0, cipher_len = 0, decipher_len = 0;
     int rc = 0;
 
     memset( message, 0x55, sizeof( message ) );
     memset( hash, 0x2a, sizeof( hash ) );
     memset( sig, 0, sizeof( sig ));
+    memset( cipher, 0, sizeof( cipher ));
+    memset( decipher, 0, sizeof( decipher ));
 
 /*
     if ( tpm_wrapped_clear() )
@@ -83,13 +85,25 @@ int main (int argc, char *argv[])
     }
 
     if ( rc = mbedtls_pk_encrypt( &ctx, message, sizeof( message ),
-                                  out, &out_len, sizeof( out ),
+                                  cipher, &cipher_len, sizeof( cipher ),
                                   random_provider, &random_ctx ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_encrypt error: %s\n", err );
         exit( 1 );
     }
+
+    if ( rc = mbedtls_pk_decrypt( &ctx, cipher, cipher_len,
+                                  decipher, &decipher_len, sizeof( decipher ),
+                                  NULL, NULL ) )
+    {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() mbedtls_pk_decrypt error: %s\n", err );
+        exit( 1 );
+    }
+
+    if ( memcmp( message, decipher, decipher_len ) )
+        printf( "main() decrypted text is not equal to plain text\n" );
 
     mbedtls_pk_free( &ctx );
     mbedtls_rnd_tpm_free( &random_ctx.drbg, &random_ctx.entropy );
