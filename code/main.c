@@ -51,7 +51,6 @@ int main (int argc, char *argv[])
     }
 */
 
-    mbedtls_rnd_tpm_init( &random_ctx.drbg, &random_ctx.entropy );
     mbedtls_pk_init( &ctx );
 
     if ( rc = mbedtls_pk_setup( &ctx, &tpm_rsa_info ) )
@@ -60,6 +59,8 @@ int main (int argc, char *argv[])
         printf( "main() mbedtls_pk_setup error: %s\n", err );
         exit( 1 );
     }
+
+    mbedtls_rnd_tpm_init( &random_ctx.drbg, &random_ctx.entropy );
 
     if ( rc = mbedtls_pk_check_pair( &ctx, &ctx ) )
     {
@@ -105,8 +106,8 @@ int main (int argc, char *argv[])
     if ( memcmp( message, decipher, decipher_len ) )
         printf( "main() decrypted text is not equal to plain text\n" );
 
-    mbedtls_pk_free( &ctx );
     mbedtls_rnd_tpm_free( &random_ctx.drbg, &random_ctx.entropy );
+    mbedtls_pk_free( &ctx );
 
     return 0;
 }

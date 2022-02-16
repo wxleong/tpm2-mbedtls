@@ -1021,7 +1021,7 @@ uint8_t tpm_wrapped_perso(void) {
     // initialize tpm if key not found
     if (found != 2) {
 
-        printf("%s keys not found, resetting the TPM...\r\n", FILE_TPMAPI);
+        printf("%s keys not found, clear and provision the TPM...\r\n", FILE_TPMAPI);
 
         if (tpm_forceClear(ectx)) {
             printf("%s tpm_forceClear error\r\n", FILE_TPMAPI);
