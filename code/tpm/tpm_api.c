@@ -615,7 +615,7 @@ uint8_t tpm_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle) {
     return 0;
 }
 
-uint8_t tpm_getRandom(ESYS_CONTEXT *ectx, uint8_t *rnd, uint16_t *len) {
+uint8_t tpm_getRandom(ESYS_CONTEXT *ectx, unsigned char *rnd, size_t *len) {
 
     // Open encrypted session
     TPM2_HANDLE sHandle = ESYS_TR_NONE;
@@ -1115,7 +1115,7 @@ uint8_t tpm_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen) 
     return 0;
 }
 
-uint8_t tpm_wrapped_getRandom(uint8_t *rnd, uint16_t *len) {
+uint8_t tpm_wrapped_getRandom(unsigned char *rnd, size_t *len) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {

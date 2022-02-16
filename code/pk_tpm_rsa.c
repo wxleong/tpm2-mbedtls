@@ -3,7 +3,7 @@
 
 static size_t tpm_rsa_get_bitlen( const void *ctx )
 {
-    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
+    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*) ctx;
     return( 8 * mbedtls_rsa_get_len( &self->rsa ) );
 }
 
@@ -16,7 +16,7 @@ static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
                            const unsigned char *hash, size_t hash_len,
                            const unsigned char *sig, size_t sig_len )
 {
-    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
+    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*) ctx;
     size_t rsa_len = mbedtls_rsa_get_len( &self->rsa );
     int ret = 0;
 
@@ -61,7 +61,7 @@ static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
 {
     (void) f_rng;
     (void) p_rng;
-    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
+    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*) ctx;
 
     if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
@@ -83,9 +83,8 @@ static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
 
     *sig_len = mbedtls_rsa_get_len( &self->rsa );
 
-    if ( tpm_wrapped_sign(hash, hash_len, sig, sig_len) ) {
+    if ( tpm_wrapped_sign(hash, hash_len, sig, sig_len) )
         return( MBEDTLS_ERR_RSA_PRIVATE_FAILED );
-    }
 
     return( 0 );
 }
@@ -103,7 +102,14 @@ static int tpm_rsa_encrypt( void *ctx,
                             unsigned char *output, size_t *olen, size_t osize,
                             int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
-    return( 0 );
+    mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*) ctx;
+    *olen = mbedtls_rsa_get_len( &self->rsa );
+
+    if( *olen > osize )
+        return( MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE );
+
+    return( mbedtls_rsa_pkcs1_encrypt( &self->rsa, f_rng, p_rng, MBEDTLS_RSA_PUBLIC,
+                                       ilen, input, output ) );
 }
 
 static int tpm_rsa_check_pair( const void *pub, const void *prv )
@@ -130,7 +136,7 @@ static void tpm_rsa_free( void *ctx )
 {
     if(ctx != NULL)
     {
-        mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
+        mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*) ctx;
         mbedtls_rsa_free( &self->rsa );
         mbedtls_free( ctx );
         /*if ( tpm_wrapped_clear() ) {
@@ -157,7 +163,8 @@ static void *tpm_rsa_alloc( void )
 
         mbedtls_rsa_init( rsa, 0, 0 );
 
-        if ( tpm_wrapped_getRsaPk( &exponent, mod, &modlen ) ) {
+        if ( tpm_wrapped_getRsaPk( &exponent, mod, &modlen ) )
+        {
             printf( "tpm_wrapped_getRsaPk error\n" );
             goto error;
         }

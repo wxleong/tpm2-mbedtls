@@ -3,6 +3,7 @@
 
 #include "mbedtls/platform.h"
 #include "mbedtls/pk_internal.h"
+#include "mbedtls/entropy.h"
 
 #define TPM_NAME "optiga-tpm2"
 
