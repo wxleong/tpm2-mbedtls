@@ -33,9 +33,9 @@ int main (int argc, char *argv[])
 
     memset( message, 0x55, sizeof( message ) );
     memset( hash, 0x2a, sizeof( hash ) );
-    memset( sig, 0, sizeof( sig ));
-    memset( cipher, 0, sizeof( cipher ));
-    memset( decipher, 0, sizeof( decipher ));
+    memset( sig, 0, sizeof( sig ) );
+    memset( cipher, 0, sizeof( cipher ) );
+    memset( decipher, 0, sizeof( decipher ) );
 
 /*
     if ( tpm_wrapped_clear() )
