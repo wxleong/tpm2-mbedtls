@@ -13,8 +13,8 @@ static int tpm_rsa_can_do( mbedtls_pk_type_t type )
 }
 
 static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
-                                     const unsigned char *hash, size_t hash_len,
-                                     const unsigned char *sig, size_t sig_len )
+                           const unsigned char *hash, size_t hash_len,
+                           const unsigned char *sig, size_t sig_len )
 {
     mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*)ctx;
     size_t rsa_len = mbedtls_rsa_get_len( &self->rsa );
@@ -54,10 +54,10 @@ static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
 }
 
 static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
-                                    const unsigned char *hash, size_t hash_len,
-                                    unsigned char *sig, size_t *sig_len,
-                                    int (*f_rng)(void *, unsigned char *, size_t),
-                                    void *p_rng )
+                         const unsigned char *hash, size_t hash_len,
+                         unsigned char *sig, size_t *sig_len,
+                         int (*f_rng)(void *, unsigned char *, size_t),
+                         void *p_rng )
 {
     (void) f_rng;
     (void) p_rng;
@@ -91,17 +91,17 @@ static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
 }
 
 static int tpm_rsa_decrypt( void *ctx,
-                    const unsigned char *input, size_t ilen,
-                    unsigned char *output, size_t *olen, size_t osize,
-                    int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                            const unsigned char *input, size_t ilen,
+                            unsigned char *output, size_t *olen, size_t osize,
+                            int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
     return( 0 );
 }
 
 static int tpm_rsa_encrypt( void *ctx,
-                    const unsigned char *input, size_t ilen,
-                    unsigned char *output, size_t *olen, size_t osize,
-                    int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                            const unsigned char *input, size_t ilen,
+                            unsigned char *output, size_t *olen, size_t osize,
+                            int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
     return( 0 );
 }
