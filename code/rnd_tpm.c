@@ -28,13 +28,13 @@ int mbedtls_rnd_tpm_init( mbedtls_ctr_drbg_context *drbg,
     mbedtls_ctr_drbg_init( drbg );
     mbedtls_entropy_init( entropy );
 
-    if ( rc = mbedtls_entropy_add_source( entropy,
+    if ( ( rc = mbedtls_entropy_add_source( entropy,
                                           mbedtls_rnd_tpm_entropy_f_source, NULL, 0,
-                                          MBEDTLS_ENTROPY_SOURCE_STRONG ) )
+                                          MBEDTLS_ENTROPY_SOURCE_STRONG ) ) )
         return( rc );
     
-    if ( rc = mbedtls_ctr_drbg_seed( drbg, mbedtls_entropy_func,
-                                     entropy, NULL, 0 ) )
+    if ( ( rc = mbedtls_ctr_drbg_seed( drbg, mbedtls_entropy_func,
+                                     entropy, NULL, 0 ) ) )
         return( rc );
 
     return( rc );

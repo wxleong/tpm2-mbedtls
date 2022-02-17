@@ -26,7 +26,7 @@ static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
     /* library limitation */
-    if(md_alg != MBEDTLS_MD_SHA256)
+    if( md_alg != MBEDTLS_MD_SHA256 )
         return( MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE );
 
     if( sig_len < rsa_len )
@@ -43,9 +43,9 @@ static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
         hash_len = mbedtls_md_get_size( md_info );
     }
 
-    if( ret = mbedtls_rsa_pkcs1_verify( &self->rsa, NULL, NULL,
+    if( ( ret = mbedtls_rsa_pkcs1_verify( &self->rsa, NULL, NULL,
                                         MBEDTLS_RSA_PUBLIC, md_alg,
-                                        (unsigned int) hash_len, hash, sig ) )
+                                        (unsigned int) hash_len, hash, sig ) ) )
         return( ret );
 
 
@@ -203,18 +203,18 @@ int tpm_pk_init( mbedtls_pk_context *ctx , int padding_scheme, int hash_algo)
         mbedtls_rsa_init( rsa, padding_scheme, hash_algo );
         rsa->ver = 0;
 
-        if ( ret = mbedtls_mpi_read_binary( &rsa->N, mod, modlen ) )
+        if ( ( ret = mbedtls_mpi_read_binary( &rsa->N, mod, modlen ) ) )
             return( ret );
 
         if ( exponent != 65537 )
             return( MBEDTLS_ERR_RSA_PUBLIC_FAILED );
 
-        if ( ret = mbedtls_mpi_read_binary( &rsa->E, exp, 3 ) )
+        if ( ( ret = mbedtls_mpi_read_binary( &rsa->E, exp, 3 ) ) )
             return( ret );
 
         rsa->len = mbedtls_mpi_bitlen( &rsa->N ) / 8;
 
-        if ( ret = mbedtls_rsa_check_pubkey( rsa ) )
+        if ( ( ret = mbedtls_rsa_check_pubkey( rsa ) ) )
             return( ret );
     }
 

@@ -27,7 +27,8 @@ int main (int argc, char *argv[])
     (void) argv;
     random_context random_ctx;
     mbedtls_pk_context ctx;
-    unsigned char message[32], cipher[256], decipher[256], hash[32], sig[64], err[500];
+    unsigned char message[32], cipher[256], decipher[256], hash[32], sig[64];
+    char err[500];
     size_t sig_len = 0, cipher_len = 0, decipher_len = 0;
     int rc = 0;
 
@@ -54,7 +55,7 @@ int main (int argc, char *argv[])
     mbedtls_rnd_tpm_init( &random_ctx.drbg, &random_ctx.entropy );
     mbedtls_pk_init( &ctx );
 
-    if ( rc = mbedtls_pk_setup( &ctx, &tpm_rsa_info ) )
+    if ( ( rc = mbedtls_pk_setup( &ctx, &tpm_rsa_info ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_setup error: %s\n", err );
@@ -62,49 +63,49 @@ int main (int argc, char *argv[])
     }
 
     /* initialize the public component */
-    //if ( rc = tpm_pk_init( &ctx , MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_NONE ) )
-    if ( rc = tpm_pk_init( &ctx , MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 ) )
+    //if ( ( rc = tpm_pk_init( &ctx , MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_NONE ) ) )
+    if ( ( rc = tpm_pk_init( &ctx , MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() tpm_pk_init error: %s\n", err );
         exit( 1 );
     }
 
-    if ( rc = mbedtls_pk_check_pair( &ctx, &ctx ) )
+    if ( ( rc = mbedtls_pk_check_pair( &ctx, &ctx ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_check_pair error: %s\n", err );
         exit( 1 );
     }
 
-    if ( rc = mbedtls_pk_sign( &ctx, MBEDTLS_MD_SHA256, hash,
-                     sizeof( hash ), sig, &sig_len, NULL, NULL ) )
+    if ( ( rc = mbedtls_pk_sign( &ctx, MBEDTLS_MD_SHA256, hash,
+                     sizeof( hash ), sig, &sig_len, NULL, NULL ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_sign error: %s\n", err );
         exit( 1 );
     }
 
-    if ( rc = mbedtls_pk_verify( &ctx, MBEDTLS_MD_SHA256, hash,
-                     sizeof( hash ), sig, sig_len ) )
+    if ( ( rc = mbedtls_pk_verify( &ctx, MBEDTLS_MD_SHA256, hash,
+                     sizeof( hash ), sig, sig_len ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_verify error: %s\n", err );
         exit( 1 );
     }
 
-    if ( rc = mbedtls_pk_encrypt( &ctx, message, sizeof( message ),
+    if ( ( rc = mbedtls_pk_encrypt( &ctx, message, sizeof( message ),
                                   cipher, &cipher_len, sizeof( cipher ),
-                                  random_provider, &random_ctx ) )
+                                  random_provider, &random_ctx ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_encrypt error: %s\n", err );
         exit( 1 );
     }
 
-    if ( rc = mbedtls_pk_decrypt( &ctx, cipher, cipher_len,
+    if ( ( rc = mbedtls_pk_decrypt( &ctx, cipher, cipher_len,
                                   decipher, &decipher_len, sizeof( decipher ),
-                                  NULL, NULL ) )
+                                  NULL, NULL ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_decrypt error: %s\n", err );
