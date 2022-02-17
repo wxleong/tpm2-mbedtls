@@ -31,7 +31,8 @@
 #include <tss2/tss2_tctildr.h>
 
 #define TPM_HANDLE_PRIMARYKEY 0x8100beef
-#define TPM_HANDLE_LEAFKEY 0x8100cafe
+#define TPM_HANDLE_RSALEAFKEY 0x8100cafe
+#define TPM_HANDLE_ECLEAFKEY 0x8100bead
 
 int tpm_open(ESYS_CONTEXT **ectx);
 int tpm_close(ESYS_CONTEXT **ectx);

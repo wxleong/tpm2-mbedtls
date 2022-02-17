@@ -384,14 +384,14 @@ int tpm_createRsaLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
     ESYS_TR persistentHandle;
     TPM2_RC rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, transientHandle,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-            TPM_HANDLE_LEAFKEY, &persistentHandle);
+            TPM_HANDLE_RSALEAFKEY, &persistentHandle);
 
     if (rval != TSS2_RC_SUCCESS) {
         printf("%s Esys_EvictControl error\n", FILE_TPMAPI);
         goto err1;
     }
 
-    printf("%s Created persistent leaf key (0x%x)\n", FILE_TPMAPI, TPM_HANDLE_LEAFKEY);
+    printf("%s Created persistent leaf key (0x%x)\n", FILE_TPMAPI, TPM_HANDLE_RSALEAFKEY);
 
     if (0) {
 err1:
@@ -1001,8 +1001,8 @@ int tpm_wrapped_clear(void) {
         return 1;
     }
 
-    if (tpm_clearPersistentHandle(ectx, TPM_HANDLE_LEAFKEY)) {
-        printf("%s tpm_clearPersistentHandle(TPM_HANDLE_LEAFKEY) error\n", FILE_TPMAPI);
+    if (tpm_clearPersistentHandle(ectx, TPM_HANDLE_RSALEAFKEY)) {
+        printf("%s tpm_clearPersistentHandle(TPM_HANDLE_RSALEAFKEY) error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
@@ -1052,7 +1052,7 @@ int tpm_wrapped_perso(void) {
 
         for (i=0 ; i<count; i++) {
             if (*(persistent_sys_handles + i) == TPM_HANDLE_PRIMARYKEY
-                    || *(persistent_sys_handles + i) == TPM_HANDLE_LEAFKEY) {
+                    || *(persistent_sys_handles + i) == TPM_HANDLE_RSALEAFKEY) {
                 found++;
             }
         } 
@@ -1111,7 +1111,7 @@ int tpm_wrapped_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned ch
         return 1;
     }
     
-    if (tpm_sign(ectx, TPM_HANDLE_LEAFKEY, scheme, hashAlgo, hash, hashlen, sig, siglen)) {
+    if (tpm_sign(ectx, TPM_HANDLE_RSALEAFKEY, scheme, hashAlgo, hash, hashlen, sig, siglen)) {
         printf("%s tpm_sign error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
@@ -1133,7 +1133,7 @@ int tpm_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hash, const unsigned ch
         return 1;
     }
 
-    if (tpm_decipher(ectx, TPM_HANDLE_LEAFKEY, scheme, hash, input, inlen, output, outlen)) {
+    if (tpm_decipher(ectx, TPM_HANDLE_RSALEAFKEY, scheme, hash, input, inlen, output, outlen)) {
         printf("%s tpm_decipher error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
@@ -1155,7 +1155,7 @@ int tpm_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen) {
         return 1;
     }
 
-    if (tpm_readRsaPublicKey(ectx, TPM_HANDLE_LEAFKEY, exponent, mod, modlen)) {
+    if (tpm_readRsaPublicKey(ectx, TPM_HANDLE_RSALEAFKEY, exponent, mod, modlen)) {
         printf("%s tpm_readRsaPublicKey error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
@@ -1239,7 +1239,7 @@ int tpm_unit_test() {
         return 1;
     }
 
-    if (tpm_readRsaPublicKey(ectx, TPM_HANDLE_LEAFKEY, &exponent, mod, &mod_len)) {
+    if (tpm_readRsaPublicKey(ectx, TPM_HANDLE_RSALEAFKEY, &exponent, mod, &mod_len)) {
         printf("%s tpm_readRsaPublicKey error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
@@ -1251,59 +1251,59 @@ int tpm_unit_test() {
         return 1;
     }
 
-    if (tpm_cipher(ectx, TPM_HANDLE_LEAFKEY, TPM2_ALG_RSAES, TPM2_ALG_NULL, message, sizeof(message), cipher, &cipher_len)) {
+    if (tpm_cipher(ectx, TPM_HANDLE_RSALEAFKEY, TPM2_ALG_RSAES, TPM2_ALG_NULL, message, sizeof(message), cipher, &cipher_len)) {
         printf("%s tpm_cipher error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
 
-    if (tpm_decipher(ectx, TPM_HANDLE_LEAFKEY, TPM2_ALG_RSAES, TPM2_ALG_NULL, cipher, cipher_len, decipher, &decipher_len)) {
+    if (tpm_decipher(ectx, TPM_HANDLE_RSALEAFKEY, TPM2_ALG_RSAES, TPM2_ALG_NULL, cipher, cipher_len, decipher, &decipher_len)) {
         printf("%s tpm_decipher error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
 
     cipher_len = sizeof(cipher);
-    if (tpm_cipher(ectx, TPM_HANDLE_LEAFKEY, TPM2_ALG_OAEP, TPM2_ALG_SHA256, message, sizeof(message), cipher, &cipher_len)) {
+    if (tpm_cipher(ectx, TPM_HANDLE_RSALEAFKEY, TPM2_ALG_OAEP, TPM2_ALG_SHA256, message, sizeof(message), cipher, &cipher_len)) {
         printf("%s tpm_cipher error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
 
     decipher_len = sizeof(decipher);
-    if (tpm_decipher(ectx, TPM_HANDLE_LEAFKEY, TPM2_ALG_OAEP, TPM2_ALG_SHA256, cipher, cipher_len, decipher, &decipher_len)) {
+    if (tpm_decipher(ectx, TPM_HANDLE_RSALEAFKEY, TPM2_ALG_OAEP, TPM2_ALG_SHA256, cipher, cipher_len, decipher, &decipher_len)) {
         printf("%s tpm_decipher error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
 
-    if (tpm_sign(ectx, TPM_HANDLE_LEAFKEY, TPM2_ALG_RSASSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig, &sig_len)) {
+    if (tpm_sign(ectx, TPM_HANDLE_RSALEAFKEY, TPM2_ALG_RSASSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig, &sig_len)) {
         printf("%s tpm_sign error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
 
-    if (tpm_verify(ectx, TPM_HANDLE_LEAFKEY, TPM2_ALG_RSASSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig, sig_len, &result)) {
+    if (tpm_verify(ectx, TPM_HANDLE_RSALEAFKEY, TPM2_ALG_RSASSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig, sig_len, &result)) {
         printf("%s tpm_verify error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
 
     sig_len = sizeof(sig);
-    if (tpm_sign(ectx, TPM_HANDLE_LEAFKEY, TPM2_ALG_RSAPSS, TPM2_ALG_SHA256, hash, sizeof(hash), sig, &sig_len)) {
+    if (tpm_sign(ectx, TPM_HANDLE_RSALEAFKEY, TPM2_ALG_RSAPSS, TPM2_ALG_SHA256, hash, sizeof(hash), sig, &sig_len)) {
         printf("%s tpm_sign error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
 
-    if (tpm_verify(ectx, TPM_HANDLE_LEAFKEY, TPM2_ALG_RSAPSS, TPM2_ALG_SHA256, hash, sizeof(hash), sig, sig_len, &result)) {
+    if (tpm_verify(ectx, TPM_HANDLE_RSALEAFKEY, TPM2_ALG_RSAPSS, TPM2_ALG_SHA256, hash, sizeof(hash), sig, sig_len, &result)) {
         printf("%s tpm_verify error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
 
-    if (tpm_clearPersistentHandle(ectx, TPM_HANDLE_LEAFKEY)) {
-        printf("%s tpm_clearPersistentHandle(TPM_HANDLE_LEAFKEY) error\n", FILE_TPMAPI);
+    if (tpm_clearPersistentHandle(ectx, TPM_HANDLE_RSALEAFKEY)) {
+        printf("%s tpm_clearPersistentHandle(TPM_HANDLE_RSALEAFKEY) error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
