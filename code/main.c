@@ -4,7 +4,7 @@
 
 #include "tpm/tpm_api.h"
 #include "mbedtls/error.h"
-#include "pk_tpm.h"
+#include "pk_tpm_rsa.h"
 #include "rnd_tpm.h"
 
 typedef struct random_context {
@@ -43,14 +43,15 @@ int main (int argc, char *argv[])
         printf( "main() tpm_wrapped_clear error\n" );
         exit( 1 );
     }
+*/
 
     if ( tpm_wrapped_perso() )
     {
         printf( "main() tpm_wrapped_perso error\n" );
         exit( 1 );
     }
-*/
 
+    mbedtls_rnd_tpm_init( &random_ctx.drbg, &random_ctx.entropy );
     mbedtls_pk_init( &ctx );
 
     if ( rc = mbedtls_pk_setup( &ctx, &tpm_rsa_info ) )
@@ -60,7 +61,13 @@ int main (int argc, char *argv[])
         exit( 1 );
     }
 
-    mbedtls_rnd_tpm_init( &random_ctx.drbg, &random_ctx.entropy );
+    /* initialize the public component */
+    if ( rc = tpm_pk_init( &ctx , MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_NONE ) )
+    {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() tpm_pk_init error: %s\n", err );
+        exit( 1 );
+    }
 
     if ( rc = mbedtls_pk_check_pair( &ctx, &ctx ) )
     {
@@ -106,8 +113,8 @@ int main (int argc, char *argv[])
     if ( memcmp( message, decipher, decipher_len ) )
         printf( "main() decrypted text is not equal to plain text\n" );
 
-    mbedtls_rnd_tpm_free( &random_ctx.drbg, &random_ctx.entropy );
     mbedtls_pk_free( &ctx );
+    mbedtls_rnd_tpm_free( &random_ctx.drbg, &random_ctx.entropy );
 
     return 0;
 }

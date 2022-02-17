@@ -16,4 +16,6 @@ typedef struct
 extern const mbedtls_pk_info_t tpm_rsa_info;
 extern const mbedtls_pk_info_t tpm_ecp_info;
 
+int tpm_pk_init( mbedtls_pk_context *ctx , int padding_scheme, int hash_algo);
+
 #endif

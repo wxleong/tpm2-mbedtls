@@ -1,4 +1,4 @@
-#include "pk_tpm.h"
+#include "pk_tpm_rsa.h"
 #include "tpm_api.h"
 
 static size_t tpm_rsa_get_bitlen( const void *ctx )
@@ -9,6 +9,8 @@ static size_t tpm_rsa_get_bitlen( const void *ctx )
 
 static int tpm_rsa_can_do( mbedtls_pk_type_t type )
 {
+/*    return( type == MBEDTLS_PK_RSA ||
+            type == MBEDTLS_PK_RSASSA_PSS ); */
     return( type == MBEDTLS_PK_RSA );
 }
 
@@ -23,7 +25,6 @@ static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
     if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-    /* library limitation */
     if(md_alg != MBEDTLS_MD_SHA256)
         return( MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE );
 
@@ -66,7 +67,6 @@ static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
     if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-    /* library limitation */
     if(md_alg != MBEDTLS_MD_SHA256)
         return( MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE );
 
@@ -139,7 +139,7 @@ static int tpm_rsa_check_pair( const void *pub, const void *prv )
                                  (unsigned int) sizeof( hash ), hash, sig ) != 0 )
         return( MBEDTLS_ERR_RSA_KEY_CHECK_FAILED );
 
-    return 0;
+    return( 0 );
 }
 
 static void tpm_rsa_free( void *ctx )
@@ -157,50 +157,14 @@ static void tpm_rsa_free( void *ctx )
 
 static void *tpm_rsa_alloc( void )
 {
-    if ( tpm_wrapped_perso() ) {
+    /*if ( tpm_wrapped_perso() ) {
         printf( "tpm_wrapped_perso error\n" );
         return NULL;
-    }
+    }*/
 
     mbedtls_tpm_rsa *ctx = mbedtls_calloc( 1, sizeof( mbedtls_tpm_rsa ) );
 
-    if ( ctx != NULL ) {
-        int exponent;
-        unsigned char mod[256];
-        size_t modlen = sizeof(mod);
-        const unsigned char exp[] = {0x1,0x0,0x1}; // exponent 65537
-        mbedtls_rsa_context *rsa = &ctx->rsa;
-
-        mbedtls_rsa_init( rsa, 0, 0 );
-
-        if ( tpm_wrapped_getRsaPk( &exponent, mod, &modlen ) )
-        {
-            printf( "tpm_wrapped_getRsaPk error\n" );
-            goto error;
-        }
-
-        // set RSA signature schemes to RSASSA-PKCS1-v1_5
-        mbedtls_rsa_init( rsa, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_NONE );
-        rsa->ver = 0;
-
-        if ( mbedtls_mpi_read_binary( &rsa->N, mod, modlen ) )
-            goto error;
-
-        if ( exponent != 65537 )
-            goto error;
-
-        if ( mbedtls_mpi_read_binary( &rsa->E, exp, 3 ) )
-            goto error;
-
-        rsa->len = mbedtls_mpi_bitlen( &rsa->N ) / 8;
-
-        if ( mbedtls_rsa_check_pubkey( rsa ) )
-            goto error;
-    }
-
     return( ctx );
-error:
-    tpm_rsa_free( ctx );
     return NULL;
 }
 
@@ -208,6 +172,48 @@ static void tpm_rsa_debug( const void *ctx, mbedtls_pk_debug_item *items )
 {
     (void) ctx;
     (void) items;
+}
+
+/**
+ * padding_scheme MBEDTLS_RSA_PKCS_V15 / MBEDTLS_RSA_PKCS_V21
+ * hash_algo MBEDTLS_MD_NONE / MBEDTLS_MD_SHA256
+ */
+int tpm_pk_init( mbedtls_pk_context *ctx , int padding_scheme, int hash_algo)
+{
+    int ret = 0;
+
+    if ( ctx != NULL ) {
+        int exponent;
+        unsigned char mod[256];
+        size_t modlen = sizeof(mod);
+        const unsigned char exp[] = {0x1,0x0,0x1}; // exponent 65537
+        mbedtls_rsa_context *rsa = (mbedtls_rsa_context *) ctx->pk_ctx;
+
+        if ( tpm_wrapped_getRsaPk( &exponent, mod, &modlen ) )
+        {
+            printf( "tpm_wrapped_getRsaPk error\n" );
+            return( MBEDTLS_ERR_RSA_HW_ACCEL_FAILED );
+        }
+
+        mbedtls_rsa_init( rsa, padding_scheme, hash_algo );
+        rsa->ver = 0;
+
+        if ( ret = mbedtls_mpi_read_binary( &rsa->N, mod, modlen ) )
+            return( ret );
+
+        if ( exponent != 65537 )
+            return( MBEDTLS_ERR_RSA_PUBLIC_FAILED );
+
+        if ( ret = mbedtls_mpi_read_binary( &rsa->E, exp, 3 ) )
+            return( ret );
+
+        rsa->len = mbedtls_mpi_bitlen( &rsa->N ) / 8;
+
+        if ( ret = mbedtls_rsa_check_pubkey( rsa ) )
+            return( ret );
+    }
+
+    return( 0 );
 }
 
 const mbedtls_pk_info_t tpm_rsa_info =
