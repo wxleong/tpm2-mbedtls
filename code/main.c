@@ -62,7 +62,8 @@ int main (int argc, char *argv[])
     }
 
     /* initialize the public component */
-    if ( rc = tpm_pk_init( &ctx , MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_NONE ) )
+    //if ( rc = tpm_pk_init( &ctx , MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_NONE ) )
+    if ( rc = tpm_pk_init( &ctx , MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() tpm_pk_init error: %s\n", err );
