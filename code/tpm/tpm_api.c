@@ -802,8 +802,9 @@ uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     return 0;
 }
 
-uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned char *datain,
-                 size_t lenin, unsigned char *dataout, size_t *lenout) {
+uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
+                 TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo,
+                 const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout) {
     
     if (lenin != TPM2_RSA_HASH_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
         printf("%s tpm_sign invalid length error\r\n", FILE_TPMAPI);
@@ -839,15 +840,18 @@ uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned char *d
         printf("%s Esys_TR_SetAuth error\r\n", FILE_TPMAPI);
         return 1;
     }
-    
-    TPMT_SIG_SCHEME scheme = { 
-        .scheme = TPM2_ALG_RSASSA,
-        .details = {
-            .rsassa = {
-                .hashAlg = TPM2_ALG_SHA256
-            }
-        }
-    };
+
+    TPMT_SIG_SCHEME scheme = {0};
+    switch (paddingScheme) {
+        case TPM2_ALG_RSAPSS:
+            scheme.scheme = TPM2_ALG_RSAPSS;
+            scheme.details.rsapss.hashAlg = hashAlgo;
+            break;
+        case TPM2_ALG_RSASSA:
+        default:
+            scheme.scheme = TPM2_ALG_RSASSA;
+            scheme.details.rsassa.hashAlg = hashAlgo;
+    }
 
     /* Not using ticket/hash_validation, since hash is not calculated by TPM.
      * 
@@ -888,8 +892,10 @@ uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned char *d
 
 }
 
-uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
-                   uint16_t digestlen, uint8_t *sig, uint16_t siglen, uint8_t *result) {
+uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
+                   TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo,
+                   uint8_t *digest, uint16_t digestlen, uint8_t *sig,
+                   uint16_t siglen, uint8_t *result) {
     *result = 0;
     if (digestlen != TPM2_RSA_HASH_BYTES || siglen < TPM2_RSA_KEY_BYTES) {
         printf("%s tpm_verify invalid length error\r\n", FILE_TPMAPI);
@@ -904,19 +910,26 @@ uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
     }
 
     ESYS_TR keyHandle;
-    TPMT_SIGNATURE signature = {
-        .sigAlg = TPM2_ALG_RSASSA,
-        .signature.rsassa = {
-            .hash = TPM2_ALG_SHA256,
-            .sig.size = siglen,
-        }
-    };
+
+    TPMT_SIGNATURE signature = {0};
+    switch (paddingScheme) {
+        case TPM2_ALG_RSAPSS:
+            signature.sigAlg = TPM2_ALG_RSAPSS;
+            signature.signature.rsapss.hash = hashAlgo;
+            signature.signature.rsapss.sig.size = siglen;
+            break;
+        case TPM2_ALG_RSASSA:
+        default:
+            signature.sigAlg = TPM2_ALG_RSASSA;
+            signature.signature.rsassa.hash = hashAlgo;
+            signature.signature.rsassa.sig.size = siglen;
+    }
     memcpy(signature.signature.rsassa.sig.buffer, sig, siglen);
+
     TPM2B_DIGEST hash = {
         .size = digestlen
     };
     memcpy(hash.buffer, digest, digestlen);
-    
     
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
             sHandle, ESYS_TR_NONE, ESYS_TR_NONE, &keyHandle);
@@ -1092,7 +1105,7 @@ uint8_t tpm_wrapped_perso(void) {
     return 0;
 }
 
-uint8_t tpm_wrapped_sign(const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen) {
+uint8_t tpm_wrapped_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {
@@ -1100,7 +1113,7 @@ uint8_t tpm_wrapped_sign(const unsigned char *hash, size_t hashlen, unsigned cha
         return 1;
     }
     
-    if (tpm_sign(ectx, TPM_HANDLE_LEAFKEY, hash, hashlen, sig, siglen)) {
+    if (tpm_sign(ectx, TPM_HANDLE_LEAFKEY, scheme, hashAlgo, hash, hashlen, sig, siglen)) {
         printf("%s tpm_sign error\r\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;

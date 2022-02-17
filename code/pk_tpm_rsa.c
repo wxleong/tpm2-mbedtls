@@ -25,6 +25,7 @@ static int tpm_rsa_verify( void *ctx, mbedtls_md_type_t md_alg,
     if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
+    /* library limitation */
     if(md_alg != MBEDTLS_MD_SHA256)
         return( MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE );
 
@@ -83,7 +84,9 @@ static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
 
     *sig_len = mbedtls_rsa_get_len( &self->rsa );
 
-    if ( tpm_wrapped_sign( hash, hash_len, sig, sig_len ) )
+    if ( tpm_wrapped_sign( tpm_convert_rsassa_algo( self->rsa.padding ),
+                           tpm_convert_hash_algo( md_alg ),
+                           hash, hash_len, sig, sig_len ) )
         return( MBEDTLS_ERR_RSA_PRIVATE_FAILED );
 
     return( 0 );
@@ -101,8 +104,8 @@ static int tpm_rsa_decrypt( void *ctx,
 
     *olen = osize;
 
-    if ( tpm_wrapped_decipher( tpm_convert_rsaes_algo(self->rsa.padding),
-                               tpm_convert_hash_algo(self->rsa.hash_id),
+    if ( tpm_wrapped_decipher( tpm_convert_rsaes_algo( self->rsa.padding ),
+                               tpm_convert_hash_algo( self->rsa.hash_id ),
                                input, ilen, output, olen ) )
         return( MBEDTLS_ERR_RSA_PRIVATE_FAILED );
 

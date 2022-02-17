@@ -48,8 +48,8 @@ uint8_t tpm_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *expone
 uint8_t tpm_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, uint8_t *num_handle, TPM2_HANDLE **sys_handles);
 uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, uint8_t *datain, uint16_t lenin, uint8_t *dataout, uint16_t *lenout);
 uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
-uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
-uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest, uint16_t digestlen, uint8_t *sig, uint16_t siglen, uint8_t *result);
+uint8_t tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
+uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, uint8_t *digest, uint16_t digestlen, uint8_t *sig, uint16_t siglen, uint8_t *result);
 
 TPM2_ALG_ID tpm_convert_rsaes_algo(int mbedtls_algo);
 TPM2_ALG_ID tpm_convert_rsassa_algo(int mbedtls_algo);
@@ -57,8 +57,8 @@ TPM2_ALG_ID tpm_convert_hash_algo(int mbedtls_algo);
 
 uint8_t tpm_wrapped_clear(void);
 uint8_t tpm_wrapped_perso(void);
-uint8_t tpm_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hashalgo, const unsigned char *input, size_t inlen, unsigned char *output, size_t *outlen);
-uint8_t tpm_wrapped_sign(const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen);
+uint8_t tpm_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *input, size_t inlen, unsigned char *output, size_t *outlen);
+uint8_t tpm_wrapped_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen);
 uint8_t tpm_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen);
 uint8_t tpm_wrapped_getRandom(unsigned char *rnd, size_t *len);
 
