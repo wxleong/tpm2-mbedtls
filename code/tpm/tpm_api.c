@@ -38,7 +38,8 @@
 #define TPM2_AUTH_EH "endorsement123" // endorsement hierarchy
 #define TPM2_AUTH_LOCKOUT "lockout123"
 #define TPM2_AUTH_SRK "srk123" // storage root key / primary key
-#define TPM2_AUTH_LEAFKEY "leaf123"
+#define TPM2_AUTH_RSALEAFKEY "rsaleaf123"
+#define TPM2_AUTH_ECLEAFKEY "ecleaf123"
 
 int tpm_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle);
 int tpm_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle);
@@ -284,7 +285,7 @@ int tpm_createRsaLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
             return 1;
         }
 
-        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_LEAFKEY);
+        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_RSALEAFKEY);
         
         TPM2B_SENSITIVE_CREATE inSensitiveLeaf = {
             .size = 4,
@@ -750,7 +751,7 @@ int tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     }
 
     TPM2B_DIGEST pwd;
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_LEAFKEY);
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_RSALEAFKEY);
 
     rval = Esys_TR_SetAuth(ectx, keyHandle, &pwd);
     if (rval != TPM2_RC_SUCCESS) {
@@ -832,7 +833,7 @@ int tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     }
 
     TPM2B_DIGEST pwd;
-    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_LEAFKEY);
+    pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_RSALEAFKEY);
     
     rval = Esys_TR_SetAuth(ectx, keyHandle, &pwd);
     if (rval != TPM2_RC_SUCCESS) {
