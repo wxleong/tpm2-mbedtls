@@ -49,7 +49,7 @@ int tpm_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, int *num_handle, TPM2_
 int tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
 int tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
 int tpm_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
-int tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *digest, size_t digestlen, unsigned char *sig, size_t siglen, size_t *result);
+int tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *digest, size_t digestlen, unsigned char *sig, size_t siglen, int *result);
 
 TPM2_ALG_ID tpm_convert_rsaes_algo(int mbedtls_algo);
 TPM2_ALG_ID tpm_convert_rsassa_algo(int mbedtls_algo);
@@ -61,5 +61,7 @@ int tpm_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigne
 int tpm_wrapped_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen);
 int tpm_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen);
 int tpm_wrapped_getRandom(unsigned char *rnd, size_t *len);
+
+int tpm_unit_test();
 
 #endif

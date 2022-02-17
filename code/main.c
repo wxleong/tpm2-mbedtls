@@ -27,7 +27,7 @@ int main (int argc, char *argv[])
     (void) argv;
     random_context random_ctx;
     mbedtls_pk_context ctx;
-    unsigned char message[32], cipher[256], decipher[256], hash[32], sig[64];
+    unsigned char message[32], cipher[256], decipher[256], hash[32], sig[256];
     char err[500];
     size_t sig_len = 0, cipher_len = 0, decipher_len = 0;
     int rc = 0;
@@ -45,6 +45,8 @@ int main (int argc, char *argv[])
         exit( 1 );
     }
 */
+
+    tpm_unit_test();
 
     if ( tpm_wrapped_perso() )
     {
