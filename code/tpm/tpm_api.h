@@ -42,6 +42,7 @@ int tpm_takeOwnership(ESYS_CONTEXT *ectx);
 int tpm_getRandom(ESYS_CONTEXT *ectx, unsigned char *rnd, size_t *len);
 int tpm_createPrimaryKey(ESYS_CONTEXT *ectx);
 int tpm_createRsaLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle);
+int tpm_createEcLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle);
 int tpm_persistHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDLE pHandle);
 int tpm_clearTransientHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle);
 int tpm_clearPersistentHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle);

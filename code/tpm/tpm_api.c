@@ -385,13 +385,173 @@ int tpm_createRsaLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
     TPM2_RC rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, transientHandle,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
             TPM_HANDLE_RSALEAFKEY, &persistentHandle);
-
     if (rval != TSS2_RC_SUCCESS) {
         printf("%s Esys_EvictControl error\n", FILE_TPMAPI);
         goto err1;
     }
 
-    printf("%s Created persistent leaf key (0x%x)\n", FILE_TPMAPI, TPM_HANDLE_RSALEAFKEY);
+    rval = Esys_FlushContext(ectx, transientHandle);
+    if (rval != TPM2_RC_SUCCESS) {
+        printf("%s Esys_FlushContext error\n", FILE_TPMAPI);
+        goto err1;
+    }
+
+    printf("%s Created persistent RSA leaf key (0x%x)\n", FILE_TPMAPI, TPM_HANDLE_RSALEAFKEY);
+
+    if (0) {
+err1:
+        free(outPublic);
+        free(outPrivate);
+        return 1;
+    }
+
+    free(outPublic);
+    free(outPrivate);
+    return 0;
+}
+
+int tpm_createEcLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
+{
+    TPM2B_PUBLIC            *outPublic;
+    TPM2B_PRIVATE           *outPrivate;
+
+    /******************************/
+    /***** 1) Create leaf key *****/
+    /******************************/
+    {
+        ESYS_TR primaryHandle;
+        TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &primaryHandle);
+        if (rval != TSS2_RC_SUCCESS) {
+            printf("%s Esys_TR_FromTPMPublic error\n", FILE_TPMAPI);
+            return 1;
+        }
+
+        TPM2B_DIGEST pwd;
+        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SRK);
+
+        rval = Esys_TR_SetAuth(ectx, primaryHandle, &pwd);
+        if (rval != TPM2_RC_SUCCESS) {
+            printf("%s Esys_TR_SetAuth error\n", FILE_TPMAPI);
+            return 1;
+        }
+
+        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_ECLEAFKEY);
+
+        TPM2B_SENSITIVE_CREATE inSensitiveLeaf = {
+            .size = 4,
+            .sensitive = {
+                .userAuth = {.size = 0,.buffer = {0},
+                },
+                .data = {.size = 0,.buffer = {0},
+                },
+            },
+        };
+        inSensitiveLeaf.sensitive.userAuth = pwd;
+
+        TPM2B_PUBLIC inPublic = {
+            .size = 0,
+            .publicArea = {
+                .type = TPM2_ALG_ECC,
+                .nameAlg = TPM2_ALG_SHA256,
+                .objectAttributes = (TPMA_OBJECT_USERWITHAUTH | TPMA_OBJECT_FIXEDTPM |
+                                     TPMA_OBJECT_FIXEDPARENT | TPMA_OBJECT_SENSITIVEDATAORIGIN |
+                                     TPMA_OBJECT_SIGN_ENCRYPT),
+                .authPolicy = {
+                    .size = 0,
+                },
+                .parameters.eccDetail = {
+                    .symmetric = {
+                        .algorithm = TPM2_ALG_NULL
+                    },
+                    .scheme = {
+                        .scheme = TPM2_ALG_NULL,
+                        .details = {{0}}
+                    },
+                    .curveID = TPM2_ECC_NIST_P256,
+                    .kdf = {
+                        .scheme = TPM2_ALG_NULL,
+                        .details = {{0}}
+                    }
+                },
+                .unique.ecc = {
+                    .x = {.size = 0, .buffer = { 0 }},
+                    .y = {.size = 0, .buffer = { 0 }}
+                }
+            },
+        };
+
+        TPM2B_DATA              outsideInfo = { .size = 0 };
+        TPML_PCR_SELECTION      creationPCR = { .count = 0 };
+
+        TPM2B_CREATION_DATA     *creationData;
+        TPM2B_DIGEST            *creationHash;
+        TPMT_TK_CREATION        *creationTicket;
+        rval = Esys_Create(ectx, primaryHandle,
+                ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
+                &inSensitiveLeaf, &inPublic, &outsideInfo, &creationPCR,
+                &outPrivate, &outPublic, &creationData, &creationHash,
+                &creationTicket);
+        if(rval != TPM2_RC_SUCCESS) {
+            printf("%s Esys_Create error\n", FILE_TPMAPI);
+            return 1;
+        }
+        free(creationData);
+        free(creationHash);
+        free(creationTicket);
+
+        //printf("%s TPM leaf keypair created\n", FILE_TPMAPI);
+    }
+
+    /****************************/
+    /***** 2) Load leaf key *****/
+    /****************************/
+    //sudo tpm2_load -C RSAprimary.ctx -P RSAprimary123 -r RSALeafPriv.key -u RSALeafPub.key -n key_name_structure.data -o RSALeaf.ctx
+    ESYS_TR transientHandle;
+    {
+        ESYS_TR primaryHandle;
+        TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &primaryHandle);
+        if (rval != TSS2_RC_SUCCESS) {
+            printf("%s Esys_TR_FromTPMPublic error\n", FILE_TPMAPI);
+            goto err1;
+        }
+
+        TPM2B_DIGEST pwd;
+        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SRK);
+
+        rval = Esys_TR_SetAuth(ectx, primaryHandle, &pwd);
+        if (rval != TPM2_RC_SUCCESS) {
+            printf("%s Esys_TR_SetAuth error\n", FILE_TPMAPI);
+            goto err1;
+        }
+
+        rval = Esys_Load(ectx, primaryHandle,
+                ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
+                outPrivate, outPublic, &transientHandle);
+        if (rval != TPM2_RC_SUCCESS)
+        {
+            printf("%s Esys_Load error\n", FILE_TPMAPI);
+            goto err1;
+        }
+    }
+
+    ESYS_TR persistentHandle;
+    TPM2_RC rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, transientHandle,
+            ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
+            TPM_HANDLE_ECLEAFKEY, &persistentHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        printf("%s Esys_EvictControl error\n", FILE_TPMAPI);
+        goto err1;
+    }
+
+    rval = Esys_FlushContext(ectx, transientHandle);
+    if (rval != TPM2_RC_SUCCESS) {
+        printf("%s Esys_FlushContext error\n", FILE_TPMAPI);
+        goto err1;
+    }
+
+    printf("%s Created persistent EC leaf key (0x%x)\n", FILE_TPMAPI, TPM_HANDLE_ECLEAFKEY);
 
     if (0) {
 err1:
@@ -493,9 +653,14 @@ int tpm_createPrimaryKey(ESYS_CONTEXT *ectx) {
     rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, transientHandle,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
             TPM_HANDLE_PRIMARYKEY, &persistentHandle);
-
     if (rval != TSS2_RC_SUCCESS) {
         printf("%s Esys_EvictControl error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    rval = Esys_FlushContext(ectx, transientHandle);
+    if (rval != TPM2_RC_SUCCESS) {
+        printf("%s Esys_FlushContext error\n", FILE_TPMAPI);
         return 1;
     }
 
@@ -1209,12 +1374,6 @@ int tpm_unit_test() {
         return 1;
     }
 
-    if (tpm_getRandom(ectx, rnd, &rnd_len)) {
-        printf("%s tpm_getRandom error\n", FILE_TPMAPI);
-        tpm_close(&ectx);
-        return 1;
-    }
-
     if (tpm_forceClear(ectx)) {
         printf("%s tpm_forceClear error\n", FILE_TPMAPI);
         tpm_close(&ectx);
@@ -1233,7 +1392,19 @@ int tpm_unit_test() {
         return 1;
     }
 
+    if (tpm_getRandom(ectx, rnd, &rnd_len)) {
+        printf("%s tpm_getRandom error\n", FILE_TPMAPI);
+        tpm_close(&ectx);
+        return 1;
+    }
+
     if (tpm_createRsaLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
+        printf("%s tpm_createLeafKey error\n", FILE_TPMAPI);
+        tpm_close(&ectx);
+        return 1;
+    }
+
+    if (tpm_createEcLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
         printf("%s tpm_createLeafKey error\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
