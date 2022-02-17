@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "mbedtls/rsa.h"
+#include "mbedtls/md.h"
 #include "tpm_api.h"
 
 #define FILE_TPMAPI "tpm_api :"
@@ -295,7 +297,6 @@ uint8_t tpm_createRsaLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
         };
         inSensitiveLeaf.sensitive.userAuth = pwd;
 
-        /* RSASSA PKCS1.5 SHA256 */
         TPM2B_PUBLIC inPublic = {
             .size = 0,
             .publicArea = {
@@ -648,7 +649,8 @@ uint8_t tpm_getRandom(ESYS_CONTEXT *ectx, unsigned char *rnd, size_t *len) {
     return 0;
 }
 
-uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
+uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, 
+                   TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, uint8_t *datain,
                    uint16_t lenin, uint8_t *dataout, uint16_t *lenout) {
     
     if (lenin > TPM2_RSA_KEY_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
@@ -683,18 +685,16 @@ uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
         .buffer = {0}
     };
 
-    /*TPMT_RSA_DECRYPT scheme = { 
-        .scheme = TPM2_ALG_OAEP,
-        .details = {
-            .oaep = {
-                .hashAlg = TPM2_ALG_SHA256
-            }
-        }
-    };*/
-
-    TPMT_RSA_DECRYPT scheme = { 
-        .scheme = TPM2_ALG_RSAES
-    };
+    TPMT_RSA_DECRYPT scheme = {0};
+    switch (paddingScheme) {
+        case TPM2_ALG_OAEP:
+            scheme.scheme = TPM2_ALG_OAEP;
+            scheme.details.oaep.hashAlg = hashAlgo;
+            break;
+        case TPM2_ALG_RSAES:
+        default:
+            scheme.scheme = TPM2_ALG_RSAES;
+    }
 
     rval = Esys_RSA_Encrypt(ectx, keyHandle,
                             sHandle, ESYS_TR_NONE, ESYS_TR_NONE,
@@ -720,8 +720,9 @@ uint8_t tpm_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *datain,
     return 0;
 }
 
-uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned char *datain,
-           size_t lenin, unsigned char *dataout, size_t *lenout) {
+uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
+                     TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain,
+                     size_t lenin, unsigned char *dataout, size_t *lenout) {
 
     if (lenin > TPM2_RSA_KEY_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
         printf("%s tpm_decipher invalid length error\r\n", FILE_TPMAPI);
@@ -763,17 +764,16 @@ uint8_t tpm_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, const unsigned cha
         .buffer = {0}
     };
 
-    /*TPMT_RSA_DECRYPT scheme = { 
-        .scheme = TPM2_ALG_OAEP,
-        .details = {
-            .oaep = {
-                .hashAlg = TPM2_ALG_SHA256
-            }
-        }
-    };*/
-    TPMT_RSA_DECRYPT scheme = { 
-        .scheme = TPM2_ALG_RSAES
-    };
+    TPMT_RSA_DECRYPT scheme = {0};
+    switch (paddingScheme) {
+        case TPM2_ALG_OAEP:
+            scheme.scheme = TPM2_ALG_OAEP;
+            scheme.details.oaep.hashAlg = hashAlgo;
+            break;
+        case TPM2_ALG_RSAES:
+        default:
+            scheme.scheme = TPM2_ALG_RSAES;
+    }
 
     rval = Esys_RSA_Decrypt(ectx, keyHandle, sHandle, ESYS_TR_NONE, ESYS_TR_NONE,&encrypted_msg, &scheme, &null_data, &decrypted_msg);
     if (rval != TPM2_RC_SUCCESS) {
@@ -951,6 +951,37 @@ uint8_t tpm_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, uint8_t *digest,
     return 0;
 }
 
+TPM2_ALG_ID tpm_convert_rsaes_algo(int mbedtls_algo) {
+    switch (mbedtls_algo) {
+        case MBEDTLS_RSA_PKCS_V15:
+            return TPM2_ALG_RSAES;
+        case MBEDTLS_RSA_PKCS_V21:
+            return TPM2_ALG_OAEP;
+        default:
+            return TPM2_ALG_NULL;
+    }
+}
+
+TPM2_ALG_ID tpm_convert_rsassa_algo(int mbedtls_algo) {
+    switch (mbedtls_algo) {
+        case MBEDTLS_RSA_PKCS_V15:
+            return TPM2_ALG_RSASSA;
+        case MBEDTLS_RSA_PKCS_V21:
+            return TPM2_ALG_RSAPSS;
+        default:
+            return TPM2_ALG_NULL;
+    }
+}
+
+TPM2_ALG_ID tpm_convert_hash_algo(int mbedtls_algo) {
+    switch (mbedtls_algo) {
+        case MBEDTLS_MD_SHA256:
+            return TPM2_ALG_SHA256;
+        default:
+            return TPM2_ALG_NULL;
+    }
+}
+
 uint8_t tpm_wrapped_clear(void) {
     ESYS_CONTEXT *ectx = NULL;
 
@@ -1083,20 +1114,20 @@ uint8_t tpm_wrapped_sign(const unsigned char *hash, size_t hashlen, unsigned cha
     return 0;
 }
 
-uint8_t tpm_wrapped_decipher(const unsigned char *input, size_t inlen, unsigned char *output, size_t *outlen) {
+uint8_t tpm_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hash, const unsigned char *input, size_t inlen, unsigned char *output, size_t *outlen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpm_open(&ectx)) {
         printf("%s tpm_open error\r\n", FILE_TPMAPI);
         return 1;
     }
-    
-    if (tpm_decipher(ectx, TPM_HANDLE_LEAFKEY, input, inlen, output, outlen)) {
+
+    if (tpm_decipher(ectx, TPM_HANDLE_LEAFKEY, scheme, hash, input, inlen, output, outlen)) {
         printf("%s tpm_decipher error\r\n", FILE_TPMAPI);
         tpm_close(&ectx);
         return 1;
     }
-    
+
     if (tpm_close(&ectx)) {
         printf("%s tpm_close error\r\n", FILE_TPMAPI);
         return 1;
