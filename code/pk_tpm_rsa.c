@@ -84,8 +84,8 @@ static int tpm_rsa_sign( void *ctx, mbedtls_md_type_t md_alg,
 
     *sig_len = mbedtls_rsa_get_len( &self->rsa );
 
-    if ( tpm_wrapped_sign( tpm_convert_rsassa_algo( self->rsa.padding ),
-                           tpm_convert_hash_algo( md_alg ),
+    if ( tpmapi_wrapped_rsa_sign( tpmapi_convert_rsassa_algo( self->rsa.padding ),
+                           tpmapi_convert_hash_algo( md_alg ),
                            hash, hash_len, sig, sig_len ) )
         return( MBEDTLS_ERR_RSA_PRIVATE_FAILED );
 
@@ -104,8 +104,8 @@ static int tpm_rsa_decrypt( void *ctx,
 
     *olen = osize;
 
-    if ( tpm_wrapped_decipher( tpm_convert_rsaes_algo( self->rsa.padding ),
-                               tpm_convert_hash_algo( self->rsa.hash_id ),
+    if ( tpmapi_wrapped_decipher( tpmapi_convert_rsaes_algo( self->rsa.padding ),
+                               tpmapi_convert_hash_algo( self->rsa.hash_id ),
                                input, ilen, output, olen ) )
         return( MBEDTLS_ERR_RSA_PRIVATE_FAILED );
 
@@ -154,16 +154,16 @@ static void tpm_rsa_free( void *ctx )
         mbedtls_tpm_rsa* self = (mbedtls_tpm_rsa*) ctx;
         mbedtls_rsa_free( &self->rsa );
         mbedtls_free( ctx );
-        /*if ( tpm_wrapped_clear() ) {
-            printf( "tpm_wrapped_clear error\n" );
+        /*if ( tpmapi_wrapped_clear() ) {
+            printf( "tpmapi_wrapped_clear error\n" );
         }*/
    }
 }
 
 static void *tpm_rsa_alloc( void )
 {
-    /*if ( tpm_wrapped_perso() ) {
-        printf( "tpm_wrapped_perso error\n" );
+    /*if ( tpmapi_wrapped_perso() ) {
+        printf( "tpmapi_wrapped_perso error\n" );
         return NULL;
     }*/
 
@@ -194,9 +194,9 @@ int tpm_pk_init( mbedtls_pk_context *ctx , int padding_scheme, int hash_algo)
         const unsigned char exp[] = {0x1,0x0,0x1}; // exponent 65537
         mbedtls_rsa_context *rsa = (mbedtls_rsa_context *) ctx->pk_ctx;
 
-        if ( tpm_wrapped_getRsaPk( &exponent, mod, &modlen ) )
+        if ( tpmapi_wrapped_getRsaPk( &exponent, mod, &modlen ) )
         {
-            printf( "tpm_wrapped_getRsaPk error\n" );
+            printf( "tpmapi_wrapped_getRsaPk error\n" );
             return( MBEDTLS_ERR_RSA_HW_ACCEL_FAILED );
         }
 

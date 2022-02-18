@@ -9,7 +9,7 @@ static int mbedtls_rnd_tpm_entropy_f_source( void *data, unsigned char *output,
     if ( len > 65535 )
         return( MBEDTLS_ERR_ENTROPY_SOURCE_FAILED );
 
-    if ( tpm_wrapped_getRandom(output, &length) )
+    if ( tpmapi_wrapped_getRandom(output, &length) )
         return( MBEDTLS_ERR_ENTROPY_SOURCE_FAILED );
     
     if ( length != len )

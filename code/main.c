@@ -25,6 +25,9 @@ int main (int argc, char *argv[])
 {
     (void) argc;
     (void) argv;
+#if 0
+    tpmapi_unit_test();
+#else
     random_context random_ctx;
     mbedtls_pk_context ctx;
     unsigned char message[32], cipher[256], decipher[256], hash[32], sig[256];
@@ -38,19 +41,9 @@ int main (int argc, char *argv[])
     memset( cipher, 0, sizeof( cipher ) );
     memset( decipher, 0, sizeof( decipher ) );
 
-/*
-    if ( tpm_wrapped_clear() )
+    if ( tpmapi_wrapped_perso() )
     {
-        printf( "main() tpm_wrapped_clear error\n" );
-        exit( 1 );
-    }
-*/
-
-    tpm_unit_test();
-
-    if ( tpm_wrapped_perso() )
-    {
-        printf( "main() tpm_wrapped_perso error\n" );
+        printf( "main() tpmapi_wrapped_perso error\n" );
         exit( 1 );
     }
 
@@ -119,6 +112,6 @@ int main (int argc, char *argv[])
 
     mbedtls_pk_free( &ctx );
     mbedtls_rnd_tpm_free( &random_ctx.drbg, &random_ctx.entropy );
-
+#endif
     return 0;
 }
