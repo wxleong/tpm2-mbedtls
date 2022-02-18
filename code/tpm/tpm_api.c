@@ -1260,28 +1260,35 @@ int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 
     return 0;
 }
-#if 0
+
 int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
                      TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo,
-                     const unsigned char *dataIn, size_t inLen, unsigned char *sig,
-                     size_t sigLen, int *result) {
-    *result = 0;
-    if (inLen != TPM2_RSA_HASH_BYTES || sigLen < TPM2_RSA_KEY_BYTES) {
+                     const unsigned char *dataIn, size_t inLen,
+                     unsigned char *sigR, size_t rLen,
+                     unsigned char *sigS, size_t sLen, int *result) {
+    if (inLen != tpmapi_alg2HashSize(hashAlgo) ||
+        rLen < TPM2_EC_NIST_P256_BYTES ||
+        sLen < TPM2_EC_NIST_P256_BYTES ) {
         printf("%s tpmapi_ec_verify invalid length error\n", FILE_TPMAPI);
         return 1;
     }
+
+    *result = 0;
 
     TPMT_SIGNATURE signature = {0};
     switch (scheme) {
         case TPM2_ALG_ECDSA:
             signature.sigAlg = TPM2_ALG_ECDSA;
             signature.signature.ecdsa.hash = hashAlgo;
+            signature.signature.ecdsa.signatureR.size = rLen;
+            memcpy(signature.signature.ecdsa.signatureR.buffer, sigR, rLen);
+            signature.signature.ecdsa.signatureS.size = sLen;
+            memcpy(signature.signature.ecdsa.signatureS.buffer, sigS, sLen);
             break;
         default:
             printf("%s unknown scheme error\n", FILE_TPMAPI);
             return 1;
     }
-    memcpy(signature.signature.rsassa.sig.buffer, sig, sigLen);
 
     // Open encrypted session
     TPM2_HANDLE sHandle;
@@ -1294,7 +1301,7 @@ int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
         .size = inLen
     };
     memcpy(hash.buffer, dataIn, inLen);
-    
+
     ESYS_TR keyHandle;
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
             ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &keyHandle);
@@ -1327,7 +1334,6 @@ int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 
     return 0;
 }
-#endif
 
 TPM2_ALG_ID tpmapi_convert_rsaes_algo(int mbedtls_algo) {
     switch (mbedtls_algo) {
@@ -1695,15 +1701,13 @@ int tpmapi_unit_test() {
         tpmapi_close(&ectx);
         return 1;
     }
-#if 0
-    sig_r_len = sizeof(sig_r);
-    sig_s_len = sizeof(sig_s);
-    if (tpmapi_ec_verify(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, &sig_r_len, sig_s, &sig_s_len, &result)) {
+
+    if (tpmapi_ec_verify(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, sig_r_len, sig_s, sig_s_len, &result)) {
         printf("%s tpmapi_ec_verify error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
     }
-#endif
+
     if (tpmapi_clearPersistentHandle(ectx, TPM_HANDLE_RSALEAFKEY)) {
         printf("%s tpmapi_clearPersistentHandle(TPM_HANDLE_RSALEAFKEY) error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
