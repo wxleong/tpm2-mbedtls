@@ -1144,12 +1144,15 @@ int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     rval = Esys_VerifySignature(ectx, keyHandle,
             sHandle, ESYS_TR_NONE, ESYS_TR_NONE,
             &hash, &signature, &validation);
-    if (rval != TSS2_RC_SUCCESS) {
+    int mask = rval & (TPM2_RC_FMT1 + 0x3F);
+    if (rval != TSS2_RC_SUCCESS && mask != TPM2_RC_SIGNATURE) {
         printf("%s Esys_VerifySignature error\n", FILE_TPMAPI);
         return 0;
     }
 
-    *result = 1;
+    if (rval == TSS2_RC_SUCCESS)
+        *result = 1;
+
     free(validation);
 
     printf("%s TPM verification using RSA key handle 0x%x\n", FILE_TPMAPI, pHandle);
@@ -1316,12 +1319,15 @@ int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     rval = Esys_VerifySignature(ectx, keyHandle,
             sHandle, ESYS_TR_NONE, ESYS_TR_NONE,
             &hash, &signature, &validation);
-    if (rval != TSS2_RC_SUCCESS) {
+    int mask = rval & (TPM2_RC_FMT1 + 0x3F);
+    if (rval != TSS2_RC_SUCCESS && mask != TPM2_RC_SIGNATURE) {
         printf("%s Esys_VerifySignature error\n", FILE_TPMAPI);
         return 0;
     }
 
-    *result = 1;
+    if (rval == TSS2_RC_SUCCESS)
+        *result = 1;
+
     free(validation);
 
     printf("%s TPM verification using EC key handle 0x%x\n", FILE_TPMAPI, pHandle);
