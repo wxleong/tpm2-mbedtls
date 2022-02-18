@@ -52,7 +52,7 @@ int tpmapi_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingSc
 int tpmapi_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *dataOut, size_t *outLen);
 int tpmapi_rsa_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sig, size_t *sigLen);
 int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sig, size_t siglen, int *result);
-//int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sigR, size_t *rLen, unsigned char *sigS, size_t *sLen);
+int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sigR, size_t *rLen, unsigned char *sigS, size_t *sLen);
 //int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sigR, size_t rLen, unsigned char *sigS, size_t sLen, int *result);
 
 TPM2_ALG_ID tpmapi_convert_rsaes_algo(int mbedtls_algo);

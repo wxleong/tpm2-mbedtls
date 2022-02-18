@@ -33,6 +33,7 @@
 #define TPM2_RSA_KEY_BITS 2048
 #define TPM2_RSA_KEY_BYTES TPM2_RSA_KEY_BITS/8
 #define TPM2_RSA_HASH_BYTES 32
+#define TPM2_EC_NIST_P256_BYTES 32
 
 #define TPM2_AUTH_SH "owner123" // storage hierarchy
 #define TPM2_AUTH_EH "endorsement123" // endorsement hierarchy
@@ -41,8 +42,9 @@
 #define TPM2_AUTH_RSALEAFKEY "rsaleaf123"
 #define TPM2_AUTH_ECLEAFKEY "ecleaf123"
 
-int tpmapi_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle);
-int tpmapi_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle);
+static int tpmapi_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle);
+static int tpmapi_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle);
+static int tpmapi_alg2HashSize(TPM2_ALG_ID id);
 
 int tpmapi_open(ESYS_CONTEXT **ectx) {
     TSS2_TCTI_CONTEXT *tcti;
@@ -435,7 +437,7 @@ int tpmapi_createEcLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
             return 1;
         }
 
-        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_RSALEAFKEY);
+        pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_ECLEAFKEY);
 
         TPM2B_SENSITIVE_CREATE inSensitiveLeaf = {
             .size = 4,
@@ -723,7 +725,7 @@ int tpmapi_forceClear(ESYS_CONTEXT *ectx) {
     return 0;
 }
 
-int tpmapi_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle) {
+static int tpmapi_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle) {
     // Get primary key handle
     TPM2B_DIGEST pwd;
     pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_SRK);
@@ -769,7 +771,7 @@ int tpmapi_openEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE *sHandle) {
     return 0;
 }
 
-int tpmapi_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle) {
+static int tpmapi_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle) {
     // Close the session
     TSS2_RC rval = Esys_FlushContext(ectx, sHandle);
     if (rval != TSS2_RC_SUCCESS) {
@@ -778,6 +780,24 @@ int tpmapi_closeEncryptedSession(ESYS_CONTEXT *ectx, TPM2_HANDLE sHandle) {
     }
 
     printf("%s TPM close encrypted session\n", FILE_TPMAPI);
+    return 0;
+}
+
+static int tpmapi_alg2HashSize(TPM2_ALG_ID id) {
+
+    switch (id) {
+    case TPM2_ALG_SHA1:
+        return TPM2_SHA1_DIGEST_SIZE;
+    case TPM2_ALG_SHA256:
+        return TPM2_SHA256_DIGEST_SIZE;
+    case TPM2_ALG_SHA384:
+        return TPM2_SHA384_DIGEST_SIZE;
+    case TPM2_ALG_SHA512:
+        return TPM2_SHA512_DIGEST_SIZE;
+    case TPM2_ALG_SM3_256:
+        return TPM2_SM3_256_DIGEST_SIZE;
+    }
+
     return 0;
 }
 
@@ -1142,12 +1162,16 @@ int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 
     return 0;
 }
-#if 0
+
 int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
                    TPM2_ALG_ID sigScheme, TPM2_ALG_ID hashAlgo,
-                   const unsigned char *dataIn, size_t inLen, unsigned char *dataOut, size_t *outLen) {
+                   const unsigned char *dataIn, size_t inLen,
+                   unsigned char *sigR, size_t *rLen,
+                   unsigned char *sigS, size_t *sLen) {
 
-    if (inLen != TPM2_RSA_HASH_BYTES || *outLen < TPM2_RSA_KEY_BYTES) {
+    if (inLen != tpmapi_alg2HashSize(hashAlgo) ||
+        *rLen < TPM2_EC_NIST_P256_BYTES ||
+        *sLen < TPM2_EC_NIST_P256_BYTES ) {
         printf("%s tpmapi_ec_sign invalid length error\n", FILE_TPMAPI);
         return 1;
     }
@@ -1215,10 +1239,12 @@ int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
         return 1;
     }
 
-    switch (paddingScheme) {
+    switch (sigScheme) {
         case TPM2_ALG_ECDSA:
-            *outLen = signature->signature.ecdsa.sig.size;
-r,s
+            *sLen = signature->signature.ecdsa.signatureS.size;
+            memcpy(sigS, signature->signature.ecdsa.signatureS.buffer, *sLen);
+            *rLen = signature->signature.ecdsa.signatureR.size;
+            memcpy(sigR, signature->signature.ecdsa.signatureR.buffer, *rLen);
             break;
     }
 
@@ -1234,7 +1260,7 @@ r,s
 
     return 0;
 }
-
+#if 0
 int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
                      TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo,
                      const unsigned char *dataIn, size_t inLen, unsigned char *sig,
@@ -1549,7 +1575,9 @@ int tpmapi_unit_test() {
     ESYS_CONTEXT *ectx = NULL;
     int count, result, exponent;
     unsigned char rnd[32], mod[256], message[32], cipher[256], decipher[256], hash[32], sig[256];
+    unsigned char sig_r[32], sig_s[32];
     size_t rnd_len = sizeof(rnd), mod_len = sizeof(mod), sig_len = sizeof(sig);
+    size_t sig_r_len = sizeof(sig_r), sig_s_len = sizeof(sig_s);
     size_t cipher_len = sizeof(cipher), decipher_len = sizeof(decipher);
 
     memset(message, 0x55, sizeof(message));
@@ -1661,15 +1689,16 @@ int tpmapi_unit_test() {
         tpmapi_close(&ectx);
         return 1;
     }
-#if 0
-    sig_len = sizeof(sig);
-    if (tpmapi_ec_sign(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig, &sig_len)) {
+
+    if (tpmapi_ec_sign(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, &sig_r_len, sig_s, &sig_s_len)) {
         printf("%s tpmapi_ec_sign error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
     }
-
-    if (tpmapi_ec_verify(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig, sig_len, &result)) {
+#if 0
+    sig_r_len = sizeof(sig_r);
+    sig_s_len = sizeof(sig_s);
+    if (tpmapi_ec_verify(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, &sig_r_len, sig_s, &sig_s_len, &result)) {
         printf("%s tpmapi_ec_verify error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;

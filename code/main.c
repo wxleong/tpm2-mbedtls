@@ -25,7 +25,7 @@ int main (int argc, char *argv[])
 {
     (void) argc;
     (void) argv;
-#if 0
+#if 1
     tpmapi_unit_test();
 #else
     random_context random_ctx;
