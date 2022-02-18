@@ -1074,7 +1074,7 @@ int tpmapi_rsa_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
                 TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo,
                 const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout) {
-    
+
     if (lenin != TPM2_RSA_HASH_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
         printf("%s tpmapi_ec_sign invalid length error\n", FILE_TPMAPI);
         return 1;
@@ -1104,7 +1104,7 @@ int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
         .size = lenin
     };
     memcpy(digest.buffer, datain, lenin);
-    
+
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &keyHandle);
     if (rval != TSS2_RC_SUCCESS) {
@@ -1114,7 +1114,7 @@ int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 
     TPM2B_DIGEST pwd;
     pwd.size = (UINT16)snprintf((char *)pwd.buffer, sizeof(pwd.buffer), "%s", TPM2_AUTH_ECLEAFKEY);
-    
+
     rval = Esys_TR_SetAuth(ectx, keyHandle, &pwd);
     if (rval != TPM2_RC_SUCCESS) {
         printf("%s Esys_TR_SetAuth error\n", FILE_TPMAPI);
