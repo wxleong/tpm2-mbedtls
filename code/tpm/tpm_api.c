@@ -121,8 +121,7 @@ int tpmapi_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, int *count, TPM2_HA
     return 0;
 }
 
-int tpmapi_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponent, unsigned char *mod, size_t *modlen) {
-
+int tpmapi_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponent, unsigned char *mod, size_t *modLen) {
     TPM2B_NAME *nameKeySign;
     TPM2B_NAME *keyQualifiedName;
     TPM2B_PUBLIC *outPublic;
@@ -155,11 +154,11 @@ int tpmapi_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponen
 
     uint16_t len = outPublic->publicArea.unique.rsa.size;
     
-    if (len > *modlen) {
+    if (len > *modLen) {
         printf("%s tpmapi_readRsaPublicKey output buffer insufficient error\n", FILE_TPMAPI);
         return 1;
     }
-    *modlen = len;
+    *modLen = len;
     memcpy(mod, outPublic->publicArea.unique.rsa.buffer, len);
 
     free(nameKeySign);
@@ -816,10 +815,10 @@ int tpmapi_getRandom(ESYS_CONTEXT *ectx, unsigned char *rnd, size_t *len) {
 }
 
 int tpmapi_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, 
-                   TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain,
-                   size_t lenin, unsigned char *dataout, size_t *lenout) {
+                  TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn,
+                  size_t inLen, unsigned char *dataOut, size_t *outLen) {
     
-    if (lenin > TPM2_RSA_KEY_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
+    if (inLen > TPM2_RSA_KEY_BYTES || *outLen < TPM2_RSA_KEY_BYTES) {
         printf("%s tpmapi_cipher invalid length error\n", FILE_TPMAPI);
         return 1;
     }
@@ -847,9 +846,9 @@ int tpmapi_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 
     TPM2B_PUBLIC_KEY_RSA *encrypted_msg;
     TPM2B_PUBLIC_KEY_RSA clear_msg = {
-        .size = lenin,
+        .size = inLen,
     };
-    memcpy(clear_msg.buffer, datain, lenin);
+    memcpy(clear_msg.buffer, dataIn, inLen);
     
     ESYS_TR keyHandle;
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
@@ -872,8 +871,8 @@ int tpmapi_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
         return 1;
     }
     
-    memcpy(dataout, encrypted_msg->buffer, encrypted_msg->size);
-    *lenout = encrypted_msg->size;
+    memcpy(dataOut, encrypted_msg->buffer, encrypted_msg->size);
+    *outLen = encrypted_msg->size;
     
     free(encrypted_msg);
 
@@ -889,10 +888,10 @@ int tpmapi_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 }
 
 int tpmapi_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
-                     TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain,
-                     size_t lenin, unsigned char *dataout, size_t *lenout) {
+                    TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn,
+                    size_t inLen, unsigned char *dataOut, size_t *outLen) {
 
-    if (lenin > TPM2_RSA_KEY_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
+    if (inLen > TPM2_RSA_KEY_BYTES || *outLen < TPM2_RSA_KEY_BYTES) {
         printf("%s tpmapi_decipher invalid length error\n", FILE_TPMAPI);
         return 1;
     }
@@ -921,9 +920,9 @@ int tpmapi_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     ESYS_TR keyHandle;
     TPM2B_PUBLIC_KEY_RSA *decrypted_msg;
     TPM2B_PUBLIC_KEY_RSA encrypted_msg = {
-        .size = lenin,
+        .size = inLen,
     };
-    memcpy(encrypted_msg.buffer, datain, lenin);
+    memcpy(encrypted_msg.buffer, dataIn, inLen);
 
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &keyHandle);
@@ -952,13 +951,13 @@ int tpmapi_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
         return 1;
     }
 
-    if (*lenout < decrypted_msg->size) {
+    if (*outLen < decrypted_msg->size) {
         printf("%s insufficient buffer size error\n", FILE_TPMAPI);
         return 1;
     }
    
-    memcpy(dataout, decrypted_msg->buffer, decrypted_msg->size);
-    *lenout = decrypted_msg->size;
+    memcpy(dataOut, decrypted_msg->buffer, decrypted_msg->size);
+    *outLen = decrypted_msg->size;
     
     free(decrypted_msg);
 
@@ -974,10 +973,10 @@ int tpmapi_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 }
 
 int tpmapi_rsa_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
-                 TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo,
-                 const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout) {
+                    TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo,
+                    const unsigned char *dataIn, size_t inLen, unsigned char *sig, size_t *sigLen) {
     
-    if (lenin != TPM2_RSA_HASH_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
+    if (inLen != TPM2_RSA_HASH_BYTES || *sigLen < TPM2_RSA_KEY_BYTES) {
         printf("%s tpmapi_rsa_sign invalid length error\n", FILE_TPMAPI);
         return 1;
     }
@@ -1007,9 +1006,9 @@ int tpmapi_rsa_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     ESYS_TR keyHandle;
     TPMT_SIGNATURE *signature;
     TPM2B_DIGEST digest = {
-        .size = lenin
+        .size = inLen
     };
-    memcpy(digest.buffer, datain, lenin);
+    memcpy(digest.buffer, dataIn, inLen);
     
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &keyHandle);
@@ -1052,8 +1051,8 @@ int tpmapi_rsa_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     switch (paddingScheme) {
         case TPM2_ALG_RSAPSS:
         case TPM2_ALG_RSASSA:
-            *lenout = signature->signature.rsassa.sig.size;
-            memcpy(dataout, signature->signature.rsassa.sig.buffer, *lenout);
+            *sigLen = signature->signature.rsassa.sig.size;
+            memcpy(sig, signature->signature.rsassa.sig.buffer, *sigLen);
             break;
     }
 
@@ -1070,18 +1069,91 @@ int tpmapi_rsa_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     return 0;
 
 }
+
+int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
+                      TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo,
+                      const unsigned char *dataIn, size_t inLen, unsigned char *sig,
+                      size_t sigLen, int *result) {
+    *result = 0;
+    if (inLen != TPM2_RSA_HASH_BYTES || sigLen < TPM2_RSA_KEY_BYTES) {
+        printf("%s tpmapi_rsa_verify invalid length error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    TPMT_SIGNATURE signature = {0};
+    switch (paddingScheme) {
+        case TPM2_ALG_RSAPSS:
+            signature.sigAlg = TPM2_ALG_RSAPSS;
+            signature.signature.rsapss.hash = hashAlgo;
+            signature.signature.rsapss.sig.size = sigLen;
+            break;
+        case TPM2_ALG_RSASSA:
+            signature.sigAlg = TPM2_ALG_RSASSA;
+            signature.signature.rsassa.hash = hashAlgo;
+            signature.signature.rsassa.sig.size = sigLen;
+            break;
+        default:
+            printf("%s unknown scheme error\n", FILE_TPMAPI);
+            return 1;
+    }
+    memcpy(signature.signature.rsassa.sig.buffer, sig, sigLen);
+
+    // Open encrypted session
+    TPM2_HANDLE sHandle;
+    if (tpmapi_openEncryptedSession(ectx, &sHandle)) {
+        printf("%s tpmapi_openEncryptedSession error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    TPM2B_DIGEST hash = {
+        .size = inLen
+    };
+    memcpy(hash.buffer, dataIn, inLen);
+    
+    ESYS_TR keyHandle;
+    TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &keyHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        printf("%s Esys_TR_FromTPMPublic error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    /* This is a ticket generated by verify signature,
+     * no clue what is the purpose of it... */
+    TPMT_TK_VERIFIED *validation;
+    rval = Esys_VerifySignature(ectx, keyHandle,
+            sHandle, ESYS_TR_NONE, ESYS_TR_NONE,
+            &hash, &signature, &validation);
+    if (rval != TSS2_RC_SUCCESS) {
+        printf("%s Esys_VerifySignature error\n", FILE_TPMAPI);
+        return 0;
+    }
+
+    *result = 1;
+    free(validation);
+
+    printf("%s TPM verification using RSA key handle 0x%x\n", FILE_TPMAPI, pHandle);
+
+    // Close encrypted session
+    if (tpmapi_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpmapi_closeEncryptedSession error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    return 0;
+}
 #if 0
 int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
-                TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo,
-                const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout) {
+                   TPM2_ALG_ID sigScheme, TPM2_ALG_ID hashAlgo,
+                   const unsigned char *dataIn, size_t inLen, unsigned char *dataOut, size_t *outLen) {
 
-    if (lenin != TPM2_RSA_HASH_BYTES || *lenout < TPM2_RSA_KEY_BYTES) {
+    if (inLen != TPM2_RSA_HASH_BYTES || *outLen < TPM2_RSA_KEY_BYTES) {
         printf("%s tpmapi_ec_sign invalid length error\n", FILE_TPMAPI);
         return 1;
     }
 
     TPMT_SIG_SCHEME scheme = {0};
-    switch (paddingScheme) {
+    switch (sigScheme) {
         case TPM2_ALG_ECDSA:
             scheme.scheme = TPM2_ALG_ECDSA;
             scheme.details.ecdsa.hashAlg = hashAlgo;
@@ -1101,9 +1173,9 @@ int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     ESYS_TR keyHandle;
     TPMT_SIGNATURE *signature;
     TPM2B_DIGEST digest = {
-        .size = lenin
+        .size = inLen
     };
-    memcpy(digest.buffer, datain, lenin);
+    memcpy(digest.buffer, dataIn, inLen);
 
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &keyHandle);
@@ -1145,14 +1217,14 @@ int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 
     switch (paddingScheme) {
         case TPM2_ALG_ECDSA:
-            *lenout = signature->signature.ecdsa.sig.size;
+            *outLen = signature->signature.ecdsa.sig.size;
 r,s
             break;
     }
 
     free(signature);
 
-    printf("%s TPM signing using RSA key handle 0x%x\n", FILE_TPMAPI, pHandle);
+    printf("%s TPM signing using EC key handle 0x%x\n", FILE_TPMAPI, pHandle);
 
     // Close encrypted session
     if (tpmapi_closeEncryptedSession(ectx, sHandle)) {
@@ -1162,29 +1234,19 @@ r,s
 
     return 0;
 }
-#endif
-int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
-                   TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo,
-                   const unsigned char *digest, size_t digestlen, unsigned char *sig,
-                   size_t siglen, int *result) {
+
+int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
+                     TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo,
+                     const unsigned char *dataIn, size_t inLen, unsigned char *sig,
+                     size_t sigLen, int *result) {
     *result = 0;
-    if (digestlen != TPM2_RSA_HASH_BYTES || siglen < TPM2_RSA_KEY_BYTES) {
-        printf("%s tpmapi_rsa_verify invalid length error\n", FILE_TPMAPI);
+    if (inLen != TPM2_RSA_HASH_BYTES || sigLen < TPM2_RSA_KEY_BYTES) {
+        printf("%s tpmapi_ec_verify invalid length error\n", FILE_TPMAPI);
         return 1;
     }
 
     TPMT_SIGNATURE signature = {0};
-    switch (paddingScheme) {
-        case TPM2_ALG_RSAPSS:
-            signature.sigAlg = TPM2_ALG_RSAPSS;
-            signature.signature.rsapss.hash = hashAlgo;
-            signature.signature.rsapss.sig.size = siglen;
-            break;
-        case TPM2_ALG_RSASSA:
-            signature.sigAlg = TPM2_ALG_RSASSA;
-            signature.signature.rsassa.hash = hashAlgo;
-            signature.signature.rsassa.sig.size = siglen;
-            break;
+    switch (scheme) {
         case TPM2_ALG_ECDSA:
             signature.sigAlg = TPM2_ALG_ECDSA;
             signature.signature.ecdsa.hash = hashAlgo;
@@ -1193,7 +1255,7 @@ int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
             printf("%s unknown scheme error\n", FILE_TPMAPI);
             return 1;
     }
-    memcpy(signature.signature.rsassa.sig.buffer, sig, siglen);
+    memcpy(signature.signature.rsassa.sig.buffer, sig, sigLen);
 
     // Open encrypted session
     TPM2_HANDLE sHandle;
@@ -1203,9 +1265,9 @@ int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     }
 
     TPM2B_DIGEST hash = {
-        .size = digestlen
+        .size = inLen
     };
-    memcpy(hash.buffer, digest, digestlen);
+    memcpy(hash.buffer, dataIn, inLen);
     
     ESYS_TR keyHandle;
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, pHandle,
@@ -1229,7 +1291,7 @@ int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     *result = 1;
     free(validation);
 
-    printf("%s TPM verification using RSA key handle 0x%x\n", FILE_TPMAPI, pHandle);
+    printf("%s TPM verification using EC key handle 0x%x\n", FILE_TPMAPI, pHandle);
 
     // Close encrypted session
     if (tpmapi_closeEncryptedSession(ectx, sHandle)) {
@@ -1239,6 +1301,7 @@ int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
 
     return 0;
 }
+#endif
 
 TPM2_ALG_ID tpmapi_convert_rsaes_algo(int mbedtls_algo) {
     switch (mbedtls_algo) {
@@ -1394,7 +1457,7 @@ int tpmapi_wrapped_perso(void) {
     return 0;
 }
 
-int tpmapi_wrapped_rsa_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen) {
+int tpmapi_wrapped_rsa_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashLen, unsigned char *sig, size_t *sigLen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpmapi_open(&ectx)) {
@@ -1402,7 +1465,7 @@ int tpmapi_wrapped_rsa_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsi
         return 1;
     }
     
-    if (tpmapi_rsa_sign(ectx, TPM_HANDLE_RSALEAFKEY, scheme, hashAlgo, hash, hashlen, sig, siglen)) {
+    if (tpmapi_rsa_sign(ectx, TPM_HANDLE_RSALEAFKEY, scheme, hashAlgo, hash, hashLen, sig, sigLen)) {
         printf("%s tpmapi_rsa_sign error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
@@ -1416,7 +1479,7 @@ int tpmapi_wrapped_rsa_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsi
     return 0;
 }
 
-int tpmapi_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hash, const unsigned char *input, size_t inlen, unsigned char *output, size_t *outlen) {
+int tpmapi_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hash, const unsigned char *input, size_t inLen, unsigned char *output, size_t *outLen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpmapi_open(&ectx)) {
@@ -1424,7 +1487,7 @@ int tpmapi_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hash, const unsigned
         return 1;
     }
 
-    if (tpmapi_decipher(ectx, TPM_HANDLE_RSALEAFKEY, scheme, hash, input, inlen, output, outlen)) {
+    if (tpmapi_decipher(ectx, TPM_HANDLE_RSALEAFKEY, scheme, hash, input, inLen, output, outLen)) {
         printf("%s tpmapi_decipher error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
@@ -1438,7 +1501,7 @@ int tpmapi_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hash, const unsigned
     return 0;
 }
 
-int tpmapi_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen) {
+int tpmapi_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modLen) {
     ESYS_CONTEXT *ectx = NULL;
     
     if (tpmapi_open(&ectx)) {
@@ -1446,7 +1509,7 @@ int tpmapi_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen) {
         return 1;
     }
 
-    if (tpmapi_readRsaPublicKey(ectx, TPM_HANDLE_RSALEAFKEY, exponent, mod, modlen)) {
+    if (tpmapi_readRsaPublicKey(ectx, TPM_HANDLE_RSALEAFKEY, exponent, mod, modLen)) {
         printf("%s tpmapi_readRsaPublicKey error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;

@@ -46,14 +46,14 @@ int tpmapi_createEcLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle);
 int tpmapi_persistHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDLE pHandle);
 int tpmapi_clearTransientHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle);
 int tpmapi_clearPersistentHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle);
-int tpmapi_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponent, unsigned char *mod, size_t *modlen);
+int tpmapi_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponent, unsigned char *mod, size_t *modLen);
 int tpmapi_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, int *num_handle, TPM2_HANDLE **sys_handles);
-int tpmapi_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
-int tpmapi_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
-int tpmapi_rsa_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *dataout, size_t *lenout);
-//int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *datain, size_t lenin, unsigned char *rdataout, size_t *rlenout, unsigned char *sdataout, size_t *slenout);
-int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *digest, size_t digestlen, unsigned char *sig, size_t siglen, int *result);
-//int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *digest, size_t digestlen, unsigned char *rsig, size_t rsiglen, unsigned char *ssig, size_t ssiglen, int *result);
+int tpmapi_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *dataOut, size_t *outLen);
+int tpmapi_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *dataOut, size_t *outLen);
+int tpmapi_rsa_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sig, size_t *sigLen);
+int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sig, size_t siglen, int *result);
+//int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sigR, size_t *rLen, unsigned char *sigS, size_t *sLen);
+//int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *sigR, size_t rLen, unsigned char *sigS, size_t sLen, int *result);
 
 TPM2_ALG_ID tpmapi_convert_rsaes_algo(int mbedtls_algo);
 TPM2_ALG_ID tpmapi_convert_rsassa_algo(int mbedtls_algo);
@@ -61,9 +61,9 @@ TPM2_ALG_ID tpmapi_convert_hash_algo(int mbedtls_algo);
 
 int tpmapi_wrapped_clear(void);
 int tpmapi_wrapped_perso(void);
-int tpmapi_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *input, size_t inlen, unsigned char *output, size_t *outlen);
-int tpmapi_wrapped_rsa_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashlen, unsigned char *sig, size_t *siglen);
-int tpmapi_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modlen);
+int tpmapi_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *input, size_t inLen, unsigned char *output, size_t *outLen);
+int tpmapi_wrapped_rsa_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashLen, unsigned char *sig, size_t *sigLen);
+int tpmapi_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modLen);
 int tpmapi_wrapped_getRandom(unsigned char *rnd, size_t *len);
 
 int tpmapi_unit_test();
