@@ -183,7 +183,7 @@ static void tpm_rsa_debug( const void *ctx, mbedtls_pk_debug_item *items )
  * padding_scheme MBEDTLS_RSA_PKCS_V15 / MBEDTLS_RSA_PKCS_V21
  * hash_algo MBEDTLS_MD_NONE / MBEDTLS_MD_SHA256
  */
-int tpm_rsa_pk_init( mbedtls_pk_context *ctx , int padding_scheme, int hash_algo)
+int pk_tpm_rsa_init( mbedtls_pk_context *ctx , int padding_scheme, int hash_algo)
 {
     int ret = 0;
 
