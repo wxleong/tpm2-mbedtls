@@ -21,13 +21,8 @@ int random_provider( void *rng_state,
     return mbedtls_rnd_tpm_rand( &ctx->drbg, output, len );
 }
 
-int main (int argc, char *argv[])
+int rsa()
 {
-    (void) argc;
-    (void) argv;
-#if 1
-    tpmapi_unit_test();
-#else
     random_context random_ctx;
     mbedtls_pk_context ctx;
     unsigned char message[32], cipher[256], decipher[256], hash[32], sig[256];
@@ -44,7 +39,7 @@ int main (int argc, char *argv[])
     if ( tpmapi_wrapped_perso() )
     {
         printf( "main() tpmapi_wrapped_perso error\n" );
-        exit( 1 );
+        return( 1 );
     }
 
     mbedtls_rnd_tpm_init( &random_ctx.drbg, &random_ctx.entropy );
@@ -54,7 +49,7 @@ int main (int argc, char *argv[])
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_setup error: %s\n", err );
-        exit( 1 );
+        return( 1 );
     }
 
     /* initialize the public component */
@@ -63,14 +58,14 @@ int main (int argc, char *argv[])
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() tpm_pk_init error: %s\n", err );
-        exit( 1 );
+        return( 1 );
     }
 
     if ( ( rc = mbedtls_pk_check_pair( &ctx, &ctx ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_check_pair error: %s\n", err );
-        exit( 1 );
+        return( 1 );
     }
 
     if ( ( rc = mbedtls_pk_sign( &ctx, MBEDTLS_MD_SHA256, hash,
@@ -78,7 +73,7 @@ int main (int argc, char *argv[])
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_sign error: %s\n", err );
-        exit( 1 );
+        return( 1 );
     }
 
     if ( ( rc = mbedtls_pk_verify( &ctx, MBEDTLS_MD_SHA256, hash,
@@ -86,7 +81,7 @@ int main (int argc, char *argv[])
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_verify error: %s\n", err );
-        exit( 1 );
+        return( 1 );
     }
 
     if ( ( rc = mbedtls_pk_encrypt( &ctx, message, sizeof( message ),
@@ -95,7 +90,7 @@ int main (int argc, char *argv[])
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_encrypt error: %s\n", err );
-        exit( 1 );
+        return( 1 );
     }
 
     if ( ( rc = mbedtls_pk_decrypt( &ctx, cipher, cipher_len,
@@ -104,14 +99,30 @@ int main (int argc, char *argv[])
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
         printf( "main() mbedtls_pk_decrypt error: %s\n", err );
-        exit( 1 );
+        return( 1 );
     }
 
     if ( memcmp( message, decipher, decipher_len ) )
+    {
         printf( "main() decrypted text is not equal to plain text\n" );
+        return( 1 );
+    }
 
     mbedtls_pk_free( &ctx );
     mbedtls_rnd_tpm_free( &random_ctx.drbg, &random_ctx.entropy );
+
+    return 0;
+}
+
+int main (int argc, char *argv[])
+{
+    (void) argc;
+    (void) argv;
+#if 0
+    tpmapi_unit_test();
+#else
+    if ( rsa() )
+        exit( 1 );
 #endif
     return 0;
 }
