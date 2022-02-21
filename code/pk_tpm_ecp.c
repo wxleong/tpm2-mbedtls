@@ -43,10 +43,7 @@ static int tpm_ecp_verify( void *ctx, mbedtls_md_type_t md_alg,
                            const unsigned char *sig, size_t sig_len )
 {
     mbedtls_tpm_ecp* self = (mbedtls_tpm_ecp*)ctx;
-    unsigned char *p = (unsigned char *) sig;
-    const unsigned char *end = sig + sig_len;
-    mbedtls_mpi r, s;
-    size_t len;
+    mbedtls_ecdsa_context ecdsa_ctx;
     int ret = 0;
 
     if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len )
@@ -67,33 +64,17 @@ static int tpm_ecp_verify( void *ctx, mbedtls_md_type_t md_alg,
         hash_len = mbedtls_md_get_size( md_info );
     }
 
-    if( mbedtls_asn1_get_tag( &p, end, &len,
-            MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) != 0 )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+    mbedtls_ecdsa_init( &ecdsa_ctx );
 
-    if( p + len != end )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-
-    mbedtls_mpi_init( &r );
-    mbedtls_mpi_init( &s );
-
-    if( ( ret = mbedtls_asn1_get_mpi( &p, end, &r ) ) != 0 ||
-        ( ret = mbedtls_asn1_get_mpi( &p, end, &s ) ) != 0 )
-    {
-        ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-        goto error;
-    }
-
-    if( ( ret = mbedtls_ecdsa_verify( &self->ecp.grp, hash, hash_len,
-                                      &self->ecp.Q, &r, &s ) ) != 0 )
+    if( ( ret = mbedtls_ecdsa_from_keypair( &ecdsa_ctx, &self->ecp ) ) != 0 )
         goto error;
 
-    return( ret );
+    if( ( ret = mbedtls_ecdsa_read_signature( &ecdsa_ctx, hash, hash_len,
+                                              sig, sig_len ) ) != 0 )
+        goto error;
 
 error:
-    mbedtls_mpi_free( &r );
-    mbedtls_mpi_free( &s );
-
+    mbedtls_ecdsa_free( &ecdsa_ctx );
     return( ret );
 }
 
@@ -157,17 +138,24 @@ error:
 
 static int tpm_ecp_check_pair( const void *pub, const void *prv )
 {
-/*    int ret;
+    int ret;
     unsigned char sig[MBEDTLS_MPI_MAX_SIZE];
     unsigned char hash[32] = {0};
-    unsigned char sig[100];
+    size_t sig_len = sizeof( sig );
 
     memset( hash, 0x2a, sizeof( hash ) );
 
+    if( ( ret = tpm_ecp_sign( (void *) prv, MBEDTLS_MD_SHA256,
+                              hash, sizeof( hash ),
+                              sig, &sig_len, NULL, NULL ) ) != 0 )
+        return( ret );
 
+    if( ( ret = tpm_ecp_verify( (void *) pub, MBEDTLS_MD_SHA256,
+                                hash, sizeof( hash ),
+                                sig, sig_len ) ) != 0 )
+        return( ret );
 
-    return( ret ); */
-    return( 0 );
+    return( ret );
 }
 
 static void tpm_ecp_free( void *ctx )
