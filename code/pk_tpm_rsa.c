@@ -171,7 +171,6 @@ static void *tpm_rsa_alloc( void )
     mbedtls_tpm_rsa *ctx = mbedtls_calloc( 1, sizeof( mbedtls_tpm_rsa ) );
 
     return( ctx );
-    return NULL;
 }
 
 static void tpm_rsa_debug( const void *ctx, mbedtls_pk_debug_item *items )

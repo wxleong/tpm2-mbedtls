@@ -172,9 +172,6 @@ static void *tpm_ecp_alloc( void )
 {
     mbedtls_tpm_ecp *ctx = mbedtls_calloc( 1, sizeof( mbedtls_tpm_ecp ) );
 
-    if( ctx == NULL )
-        return( NULL );
-
     return( ctx );
 }
 
