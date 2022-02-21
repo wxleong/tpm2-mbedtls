@@ -1,3 +1,4 @@
+#include "mbedtls/entropy.h"
 #include "pk_tpm_rsa.h"
 #include "tpm_api.h"
 

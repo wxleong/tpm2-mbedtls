@@ -1,9 +1,8 @@
-#ifndef PK_TPM_H_
-#define PK_TPM_H_
+#ifndef PK_TPM_RSA_H_
+#define PK_TPM_RSA_H_
 
 #include "mbedtls/platform.h"
 #include "mbedtls/pk_internal.h"
-#include "mbedtls/entropy.h"
 
 #define TPM_NAME "optiga-tpm2"
 

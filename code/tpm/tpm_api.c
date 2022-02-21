@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "mbedtls/pk.h"
 #include "mbedtls/rsa.h"
 #include "mbedtls/md.h"
 #include "tpm_api.h"
@@ -1166,7 +1167,7 @@ int tpmapi_rsa_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     return 0;
 }
 
-int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
+int tpmapi_ecp_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
                    TPM2_ALG_ID sigScheme, TPM2_ALG_ID hashAlgo,
                    const unsigned char *dataIn, size_t inLen,
                    unsigned char *sigR, size_t *rLen,
@@ -1175,7 +1176,7 @@ int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     if (inLen != tpmapi_alg2HashSize(hashAlgo) ||
         *rLen < TPM2_EC_NIST_P256_BYTES ||
         *sLen < TPM2_EC_NIST_P256_BYTES ) {
-        printf("%s tpmapi_ec_sign invalid length error\n", FILE_TPMAPI);
+        printf("%s tpmapi_ecp_sign invalid length error\n", FILE_TPMAPI);
         return 1;
     }
 
@@ -1264,7 +1265,7 @@ int tpmapi_ec_sign(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     return 0;
 }
 
-int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
+int tpmapi_ecp_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
                      TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo,
                      const unsigned char *dataIn, size_t inLen,
                      unsigned char *sigR, size_t rLen,
@@ -1272,7 +1273,7 @@ int tpmapi_ec_verify(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle,
     if (inLen != tpmapi_alg2HashSize(hashAlgo) ||
         rLen < TPM2_EC_NIST_P256_BYTES ||
         sLen < TPM2_EC_NIST_P256_BYTES ) {
-        printf("%s tpmapi_ec_verify invalid length error\n", FILE_TPMAPI);
+        printf("%s tpmapi_ecp_verify invalid length error\n", FILE_TPMAPI);
         return 1;
     }
 
@@ -1358,6 +1359,15 @@ TPM2_ALG_ID tpmapi_convert_rsassa_algo(int mbedtls_algo) {
             return TPM2_ALG_RSASSA;
         case MBEDTLS_RSA_PKCS_V21:
             return TPM2_ALG_RSAPSS;
+        default:
+            return TPM2_ALG_NULL;
+    }
+}
+
+TPM2_ALG_ID tpmapi_convert_ecp_algo(int mbedtls_algo) {
+    switch (mbedtls_algo) {
+        case MBEDTLS_PK_ECDSA:
+            return TPM2_ALG_ECDSA;
         default:
             return TPM2_ALG_NULL;
     }
@@ -1504,6 +1514,28 @@ int tpmapi_wrapped_rsa_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsi
     }
     
     if (tpmapi_rsa_sign(ectx, TPM_HANDLE_RSALEAFKEY, scheme, hashAlgo, hash, hashLen, sig, sigLen)) {
+        printf("%s tpmapi_rsa_sign error\n", FILE_TPMAPI);
+        tpmapi_close(&ectx);
+        return 1;
+    }
+    
+    if (tpmapi_close(&ectx)) {
+        printf("%s tpmapi_close error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    return 0;
+}
+
+int tpmapi_wrapped_ecp_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashLen, unsigned char *sigR, size_t *rLen, unsigned char *sigS, size_t *sLen) {
+    ESYS_CONTEXT *ectx = NULL;
+    
+    if (tpmapi_open(&ectx)) {
+        printf("%s tpmapi_open error\n", FILE_TPMAPI);
+        return 1;
+    }
+    
+    if (tpmapi_ecp_sign(ectx, TPM_HANDLE_ECLEAFKEY, scheme, hashAlgo, hash, sizeof(hash), sigR, rLen, sigS, sLen)) {
         printf("%s tpmapi_rsa_sign error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
@@ -1702,14 +1734,14 @@ int tpmapi_unit_test() {
         return 1;
     }
 
-    if (tpmapi_ec_sign(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, &sig_r_len, sig_s, &sig_s_len)) {
-        printf("%s tpmapi_ec_sign error\n", FILE_TPMAPI);
+    if (tpmapi_ecp_sign(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, &sig_r_len, sig_s, &sig_s_len)) {
+        printf("%s tpmapi_ecp_sign error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
     }
 
-    if (tpmapi_ec_verify(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, sig_r_len, sig_s, sig_s_len, &result)) {
-        printf("%s tpmapi_ec_verify error\n", FILE_TPMAPI);
+    if (tpmapi_ecp_verify(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, sig_r_len, sig_s, sig_s_len, &result)) {
+        printf("%s tpmapi_ecp_verify error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
     }

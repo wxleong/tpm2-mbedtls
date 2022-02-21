@@ -5,6 +5,7 @@
 #include "tpm/tpm_api.h"
 #include "mbedtls/error.h"
 #include "pk_tpm_rsa.h"
+#include "pk_tpm_ecp.h"
 #include "rnd_tpm.h"
 
 typedef struct random_context {
@@ -114,6 +115,66 @@ int rsa()
     return 0;
 }
 
+int ecp()
+{
+    mbedtls_pk_context ctx;
+    unsigned char hash[32], sig[256];
+    char err[500];
+    size_t sig_len = 0;
+    int rc = 0;
+
+    memset( hash, 0x2a, sizeof( hash ) );
+    memset( sig, 0, sizeof( sig ) );
+
+    if ( tpmapi_wrapped_perso() )
+    {
+        printf( "main() tpmapi_wrapped_perso error\n" );
+        return( 1 );
+    }
+
+    if ( ( rc = mbedtls_pk_setup( &ctx, &tpm_ecp_info ) ) )
+    {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() mbedtls_pk_setup error: %s\n", err );
+        return( 1 );
+    }
+
+    /* initialize the public component */
+    if ( ( rc = pk_tpm_ecp_init( &ctx , MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 ) ) )
+    {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() pk_tpm_rsa_init error: %s\n", err );
+        return( 1 );
+    }
+
+    if ( ( rc = mbedtls_pk_check_pair( &ctx, &ctx ) ) )
+    {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() mbedtls_pk_check_pair error: %s\n", err );
+        return( 1 );
+    }
+
+    if ( ( rc = mbedtls_pk_sign( &ctx, MBEDTLS_MD_SHA256, hash,
+                     sizeof( hash ), sig, &sig_len, NULL, NULL ) ) )
+    {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() mbedtls_pk_sign error: %s\n", err );
+        return( 1 );
+    }
+
+    if ( ( rc = mbedtls_pk_verify( &ctx, MBEDTLS_MD_SHA256, hash,
+                     sizeof( hash ), sig, sig_len ) ) )
+    {
+        mbedtls_strerror( rc, err, sizeof( err ) );
+        printf( "main() mbedtls_pk_verify error: %s\n", err );
+        return( 1 );
+    }
+
+    mbedtls_pk_free( &ctx );
+
+    return 0;
+}
+
 int main (int argc, char *argv[])
 {
     (void) argc;
@@ -121,7 +182,9 @@ int main (int argc, char *argv[])
 #if 0
     tpmapi_unit_test();
 #else
-    if ( rsa() )
+    /*if ( rsa() )
+        exit( 1 );*/
+    if ( ecp() )
         exit( 1 );
 #endif
     return 0;
