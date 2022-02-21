@@ -184,8 +184,8 @@ int main (int argc, char *argv[])
 #if 0
     tpmapi_unit_test();
 #else
-    /*if ( rsa() )
-        exit( 1 );*/
+    if ( rsa() )
+        exit( 1 );
     if ( ecp() )
         exit( 1 );
 #endif
