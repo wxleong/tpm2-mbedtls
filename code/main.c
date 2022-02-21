@@ -132,6 +132,8 @@ int ecp()
         return( 1 );
     }
 
+    mbedtls_pk_init( &ctx );
+
     if ( ( rc = mbedtls_pk_setup( &ctx, &tpm_ecp_info ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
@@ -140,10 +142,10 @@ int ecp()
     }
 
     /* initialize the public component */
-    if ( ( rc = pk_tpm_ecp_init( &ctx , MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 ) ) )
+    if ( ( rc = pk_tpm_ecp_init( &ctx ) ) )
     {
         mbedtls_strerror( rc, err, sizeof( err ) );
-        printf( "main() pk_tpm_rsa_init error: %s\n", err );
+        printf( "main() pk_tpm_ecp_init error: %s\n", err );
         return( 1 );
     }
 

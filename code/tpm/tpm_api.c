@@ -179,6 +179,53 @@ int tpmapi_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponen
     return 0;
 }
 
+int tpmapi_readEcpPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, unsigned char *x, size_t *xLen, unsigned char *y, size_t *yLen) {
+    TPM2B_NAME *nameKeySign;
+    TPM2B_NAME *keyQualifiedName;
+    TPM2B_PUBLIC *outPublic;
+    ESYS_TR keyHandle;
+    TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, handle,
+                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &keyHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        printf("%s Esys_TR_FromTPMPublic error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    // Open encrypted session
+    TPM2_HANDLE sHandle = ESYS_TR_NONE;
+    if (tpmapi_openEncryptedSession(ectx, &sHandle)) {
+        printf("%s tpmapi_openEncryptedSession error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    rval = Esys_ReadPublic(ectx, keyHandle, sHandle, ESYS_TR_NONE,
+                           ESYS_TR_NONE, &outPublic, &nameKeySign,
+                           &keyQualifiedName);
+    if (rval != TSS2_RC_SUCCESS) {
+        printf("%s Esys_ReadPublic error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    *xLen = outPublic->publicArea.unique.ecc.x.size;
+    memcpy(x, outPublic->publicArea.unique.ecc.x.buffer, *xLen);
+    *yLen = outPublic->publicArea.unique.ecc.y.size;
+    memcpy(y, outPublic->publicArea.unique.ecc.y.buffer, *yLen);
+
+    free(nameKeySign);
+    free(keyQualifiedName);
+    free(outPublic);
+
+    printf("%s TPM read public key of handle: 0x%x\n", FILE_TPMAPI, handle);
+
+    // Close encrypted session
+    if (tpmapi_closeEncryptedSession(ectx, sHandle)) {
+        printf("%s tpmapi_closeEncryptedSession error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    return 0;
+}
+
 int tpmapi_clearTransientHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle) {
     ESYS_TR handle;
     TPM2_RC rval = Esys_TR_FromTPMPublic(ectx, tHandle,
@@ -412,7 +459,7 @@ err1:
     return 0;
 }
 
-int tpmapi_createEcLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
+int tpmapi_createEcpLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
 {
     TPM2B_PUBLIC            *outPublic;
     TPM2B_PRIVATE           *outPrivate;
@@ -541,7 +588,7 @@ int tpmapi_createEcLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
     ESYS_TR persistentHandle;
     TPM2_RC rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, transientHandle,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-            TPM_HANDLE_ECLEAFKEY, &persistentHandle);
+            TPM_HANDLE_ECPLEAFKEY, &persistentHandle);
     if (rval != TSS2_RC_SUCCESS) {
         printf("%s Esys_EvictControl error\n", FILE_TPMAPI);
         goto err1;
@@ -553,7 +600,7 @@ int tpmapi_createEcLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle)
         goto err1;
     }
 
-    printf("%s Created persistent EC leaf key (0x%x)\n", FILE_TPMAPI, TPM_HANDLE_ECLEAFKEY);
+    printf("%s Created persistent EC leaf key (0x%x)\n", FILE_TPMAPI, TPM_HANDLE_ECPLEAFKEY);
 
     if (0) {
 err1:
@@ -1396,7 +1443,7 @@ int tpmapi_wrapped_clear(void) {
         return 1;
     }
 
-    if (tpmapi_clearPersistentHandle(ectx, TPM_HANDLE_ECLEAFKEY)) {
+    if (tpmapi_clearPersistentHandle(ectx, TPM_HANDLE_ECPLEAFKEY)) {
         printf("%s tpmapi_clearPersistentHandle(TPM_HANDLE_RSALEAFKEY) error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
@@ -1447,7 +1494,7 @@ int tpmapi_wrapped_perso(void) {
 
         for (i=0 ; i<count; i++) {
             if (*(persistent_sys_handles + i) == TPM_HANDLE_PRIMARYKEY
-                || *(persistent_sys_handles + i) == TPM_HANDLE_ECLEAFKEY
+                || *(persistent_sys_handles + i) == TPM_HANDLE_ECPLEAFKEY
                 || *(persistent_sys_handles + i) == TPM_HANDLE_RSALEAFKEY) {
                 found++;
             }
@@ -1485,8 +1532,8 @@ int tpmapi_wrapped_perso(void) {
             return 1;
         }
 
-        if (tpmapi_createEcLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
-            printf("%s tpmapi_createEcLeafKey error\n", FILE_TPMAPI);
+        if (tpmapi_createEcpLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
+            printf("%s tpmapi_createEcpLeafKey error\n", FILE_TPMAPI);
             tpmapi_close(&ectx);
             return 1;
         }
@@ -1535,7 +1582,7 @@ int tpmapi_wrapped_ecp_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsi
         return 1;
     }
     
-    if (tpmapi_ecp_sign(ectx, TPM_HANDLE_ECLEAFKEY, scheme, hashAlgo, hash, sizeof(hash), sigR, rLen, sigS, sLen)) {
+    if (tpmapi_ecp_sign(ectx, TPM_HANDLE_ECPLEAFKEY, scheme, hashAlgo, hash, hashLen, sigR, rLen, sigS, sLen)) {
         printf("%s tpmapi_rsa_sign error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
@@ -1581,6 +1628,29 @@ int tpmapi_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modLen) {
 
     if (tpmapi_readRsaPublicKey(ectx, TPM_HANDLE_RSALEAFKEY, exponent, mod, modLen)) {
         printf("%s tpmapi_readRsaPublicKey error\n", FILE_TPMAPI);
+        tpmapi_close(&ectx);
+        return 1;
+    }
+
+    if (tpmapi_close(&ectx)) {
+        printf("%s tpmapi_close error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    return 0;
+}
+
+int tpmapi_wrapped_getEcpPk(unsigned char *x, size_t *xLen, unsigned char *y, size_t *yLen) {
+    ESYS_CONTEXT *ectx = NULL;
+    
+    if (tpmapi_open(&ectx)) {
+        printf("%s tpmapi_open error\n", FILE_TPMAPI);
+        return 1;
+    }
+
+    
+    if (tpmapi_readEcpPublicKey(ectx, TPM_HANDLE_ECPLEAFKEY, x, xLen, y, yLen)) {
+        printf("%s tpmapi_readEcpPublicKey error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
     }
@@ -1665,7 +1735,7 @@ int tpmapi_unit_test() {
         return 1;
     }
 
-    if (tpmapi_createEcLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
+    if (tpmapi_createEcpLeafKey(ectx, TPM_HANDLE_PRIMARYKEY)) {
         printf("%s tpmapi_createLeafKey error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
@@ -1734,13 +1804,13 @@ int tpmapi_unit_test() {
         return 1;
     }
 
-    if (tpmapi_ecp_sign(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, &sig_r_len, sig_s, &sig_s_len)) {
+    if (tpmapi_ecp_sign(ectx, TPM_HANDLE_ECPLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, &sig_r_len, sig_s, &sig_s_len)) {
         printf("%s tpmapi_ecp_sign error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
     }
 
-    if (tpmapi_ecp_verify(ectx, TPM_HANDLE_ECLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, sig_r_len, sig_s, sig_s_len, &result)) {
+    if (tpmapi_ecp_verify(ectx, TPM_HANDLE_ECPLEAFKEY, TPM2_ALG_ECDSA, TPM2_ALG_SHA256, hash, sizeof(hash), sig_r, sig_r_len, sig_s, sig_s_len, &result)) {
         printf("%s tpmapi_ecp_verify error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
@@ -1752,8 +1822,8 @@ int tpmapi_unit_test() {
         return 1;
     }
 
-    if (tpmapi_clearPersistentHandle(ectx, TPM_HANDLE_ECLEAFKEY)) {
-        printf("%s tpmapi_clearPersistentHandle(TPM_HANDLE_ECLEAFKEY) error\n", FILE_TPMAPI);
+    if (tpmapi_clearPersistentHandle(ectx, TPM_HANDLE_ECPLEAFKEY)) {
+        printf("%s tpmapi_clearPersistentHandle(TPM_HANDLE_ECPLEAFKEY) error\n", FILE_TPMAPI);
         tpmapi_close(&ectx);
         return 1;
     }

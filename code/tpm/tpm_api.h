@@ -32,7 +32,7 @@
 
 #define TPM_HANDLE_PRIMARYKEY 0x8100beef
 #define TPM_HANDLE_RSALEAFKEY 0x8100cafe
-#define TPM_HANDLE_ECLEAFKEY 0x8100bead
+#define TPM_HANDLE_ECPLEAFKEY 0x8100bead
 
 int tpmapi_open(ESYS_CONTEXT **ectx);
 int tpmapi_close(ESYS_CONTEXT **ectx);
@@ -42,11 +42,12 @@ int tpmapi_takeOwnership(ESYS_CONTEXT *ectx);
 int tpmapi_getRandom(ESYS_CONTEXT *ectx, unsigned char *rnd, size_t *len);
 int tpmapi_createPrimaryKey(ESYS_CONTEXT *ectx);
 int tpmapi_createRsaLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle);
-int tpmapi_createEcLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle);
+int tpmapi_createEcpLeafKey(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle);
 int tpmapi_persistHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle, TPM2_HANDLE pHandle);
 int tpmapi_clearTransientHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle);
 int tpmapi_clearPersistentHandle(ESYS_CONTEXT *ectx, TPM2_HANDLE tHandle);
 int tpmapi_readRsaPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, int *exponent, unsigned char *mod, size_t *modLen);
+int tpmapi_readEcpPublicKey(ESYS_CONTEXT *ectx, TPM2_HANDLE handle, unsigned char *x, size_t *xLen, unsigned char *y, size_t *yLen);
 int tpmapi_getSysHandle(ESYS_CONTEXT *ectx, UINT32 property, int *num_handle, TPM2_HANDLE **sys_handles);
 int tpmapi_cipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *dataOut, size_t *outLen);
 int tpmapi_decipher(ESYS_CONTEXT *ectx, TPM2_HANDLE pHandle, TPM2_ALG_ID paddingScheme, TPM2_ALG_ID hashAlgo, const unsigned char *dataIn, size_t inLen, unsigned char *dataOut, size_t *outLen);
@@ -66,6 +67,7 @@ int tpmapi_wrapped_decipher(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsi
 int tpmapi_wrapped_rsa_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashLen, unsigned char *sig, size_t *sigLen);
 int tpmapi_wrapped_ecp_sign(TPM2_ALG_ID scheme, TPM2_ALG_ID hashAlgo, const unsigned char *hash, size_t hashLen, unsigned char *sigR, size_t *rLen, unsigned char *sigS, size_t *sLen);
 int tpmapi_wrapped_getRsaPk(int *exponent, unsigned char *mod, size_t *modLen);
+int tpmapi_wrapped_getEcpPk(unsigned char *x, size_t *xLen, unsigned char *y, size_t *yLen);
 int tpmapi_wrapped_getRandom(unsigned char *rnd, size_t *len);
 
 int tpmapi_unit_test();

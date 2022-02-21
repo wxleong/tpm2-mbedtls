@@ -13,6 +13,6 @@ typedef struct
 
 extern const mbedtls_pk_info_t tpm_ecp_info;
 
-int pk_tpm_ecp_init( mbedtls_pk_context *ctx , int padding_scheme, int hash_algo);
+int pk_tpm_ecp_init( mbedtls_pk_context *ctx );
 
 #endif
