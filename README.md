@@ -20,8 +20,8 @@ $ make
 ```
 
 The following items are copied to [code/mbedtls-2.28.0](https://github.com/wxleong/tpm2-mbedtls/tree/develop-genesis/code/mbedtls-2.28.0):
-Header files: `~/mbedtls/include/mbedtls/`<br>
-Static libraries: `~/mbedtls/library/libmbedcrypto.a`, `~/mbedtls/library/libmbedtls.a`, and `~/mbedtls/library/libmbedx509.a`
+- Header files: `~/mbedtls/include/mbedtls/`
+- Static libraries: `~/mbedtls/library/libmbedcrypto.a`, `~/mbedtls/library/libmbedtls.a`, and `~/mbedtls/library/libmbedx509.a`
 
 # Sample
 
