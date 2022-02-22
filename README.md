@@ -40,3 +40,7 @@ $ ./main
 # License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+# To-do
+
+- Check signature output buffer size in `tpm_ecp_sign` and `tpm_rsa_sign` is suffice to avoid segmentation fault
