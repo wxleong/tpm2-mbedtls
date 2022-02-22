@@ -44,3 +44,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 # To-do
 
 - Check signature output buffer size in `tpm_ecp_sign` and `tpm_rsa_sign` is suffice to avoid segmentation fault
+- Move `pk_tpm_ecp_init` `pk_tpm_rsa_init` into `tpm_ecp_alloc` `tpm_rsa_alloc`
