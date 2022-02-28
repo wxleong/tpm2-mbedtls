@@ -13,7 +13,7 @@ Enable crypto accelerator (OPTIGA™ TPM 2.0) on Mbed TLS.
 
 ```
 $ git clone https://github.com/ARMmbed/mbedtls ~/mbedtls
-$ cd mbedtls
+$ cd ~/mbedtls
 $ git checkout mbedtls-2.28.0 
 $ cd library
 $ make
