@@ -4,6 +4,12 @@ Enable crypto accelerator (OPTIGA™ TPM 2.0) on Mbed TLS.
 
 # Table of Contents
 
+- **[Prerequisites](#prerequisites)**
+- **[Mbed TLS Library](#mbed-tls-library)**
+- **[Sample Application](#sample-application)**
+- **[References](#references)**
+- **[License](#license)**
+
 # Prerequisites
 
 - Tested on Raspberry Pi 4 Model B with Iridium 9670 TPM 2.0 board [[1]](#1) 
@@ -23,7 +29,7 @@ The following items are copied to [code/mbedtls-2.28.0](https://github.com/wxleo
 - Header files: `~/mbedtls/include/mbedtls/`
 - Static libraries: `~/mbedtls/library/libmbedcrypto.a`, `~/mbedtls/library/libmbedtls.a`, and `~/mbedtls/library/libmbedx509.a`
 
-# Sample
+# Sample Application
 
 ```
 $ git clone https://github.com/wxleong/tpm2-mbedtls ~/tpm2-mbedtls
