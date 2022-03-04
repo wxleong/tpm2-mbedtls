@@ -14,6 +14,10 @@ Enable crypto accelerator (OPTIGA™ TPM 2.0) on Mbed TLS.
 
 - Tested on Raspberry Pi 4 Model B with Iridium 9670 TPM 2.0 board [[1]](#1) 
 - Set up the Raspberry Pi according to [[2]](#2)
+- Grant access to TPM device node:
+    ```
+    $ sudo chmod a+rw /dev/tpmrm0
+    ```
 
 # Mbed TLS Library
 
