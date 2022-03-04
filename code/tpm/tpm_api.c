@@ -50,8 +50,12 @@ static int tpmapi_alg2HashSize(TPM2_ALG_ID id);
 int tpmapi_open(ESYS_CONTEXT **ectx) {
     TSS2_TCTI_CONTEXT *tcti;
 
-    /* Getting the TCTI context size */
+    /* Get the TCTI context */
+#ifdef TCTI_NAME_CONF
     TSS2_RC rc = Tss2_TctiLdr_Initialize(TCTI_NAME_CONF, &tcti);
+#else
+    TSS2_RC rc = Tss2_TctiLdr_Initialize(NULL, &tcti);
+#endif
 
     /* Initializing the Esys context */
     rc = Esys_Initialize(ectx, tcti, NULL);
